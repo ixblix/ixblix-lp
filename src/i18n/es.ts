@@ -16,7 +16,6 @@ const es = {
   'nav.auth': 'Autenticación',
   'nav.errors': 'Manejo de Errores',
   'nav.sdk': 'SDK JavaScript',
-  'nav.sampleIntegrator': 'Integrador de Ejemplo',
   'nav.apiReference': 'Referencia de API ↗',
   'nav.github': 'GitHub ↗',
 

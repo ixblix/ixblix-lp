@@ -16,7 +16,6 @@ const pt = {
   'nav.auth': 'Autenticação',
   'nav.errors': 'Tratamento de Erros',
   'nav.sdk': 'SDK JavaScript',
-  'nav.sampleIntegrator': 'Integrador de Exemplo',
   'nav.apiReference': 'Referência da API ↗',
   'nav.github': 'GitHub ↗',
 

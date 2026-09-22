@@ -16,7 +16,6 @@ const en = {
   'nav.auth': 'Authentication',
   'nav.errors': 'Error Handling',
   'nav.sdk': 'JavaScript SDK',
-  'nav.sampleIntegrator': 'Sample Integrator',
   'nav.apiReference': 'API Reference ↗',
   'nav.github': 'GitHub ↗',
 
