@@ -108,6 +108,36 @@ function homePath(loc: Locale): string {
   </div>
 
   <script>
+    // Language consistency: redirect to browser language if mismatch
+    (function() {
+      const stored = localStorage.getItem('ixblix-locale');
+      const browserLang = (navigator.language || 'en').toLowerCase();
+      const detectedLang = browserLang.startsWith('pt') ? 'pt' : browserLang.startsWith('es') ? 'es' : 'en';
+      
+      // Get current path language
+      const pathLang = window.location.pathname.split('/')[1];
+      const currentLang = (pathLang === 'pt' || pathLang === 'es') ? pathLang : 'en';
+      
+      // If user has a stored preference, use it
+      const targetLang = stored || detectedLang;
+      
+      // If current page language doesn't match target, redirect
+      if (currentLang !== targetLang) {
+        const path = window.location.pathname;
+        let newPath;
+        
+        if (targetLang === 'en') {
+          // Remove language prefix
+          newPath = path.replace(/^\/(pt|es)/, '') || '/';
+        } else {
+          // Add or replace language prefix
+          newPath = path.replace(/^\/(pt|es)?/, `/${targetLang}`);
+        }
+        
+        window.location.replace(newPath);
+      }
+    })();
+
     const toggle = document.getElementById('menu-toggle');
     const sidebar = document.getElementById('sidebar');
     const overlay = document.getElementById('sidebar-overlay');

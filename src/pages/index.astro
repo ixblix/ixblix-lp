@@ -7,6 +7,20 @@ const locale = 'en';
 ---
 
 <BaseLayout title="ixblix — Developer Documentation" locale={locale}>
+  <script>
+    // Auto-detect browser language and redirect on first visit
+    (function() {
+      const stored = localStorage.getItem('ixblix-locale');
+      if (stored) return; // User already chose a language
+      
+      const lang = (navigator.language || 'en').toLowerCase();
+      if (lang.startsWith('pt')) {
+        window.location.replace('/pt');
+      } else if (lang.startsWith('es')) {
+        window.location.replace('/es');
+      }
+    })();
+  </script>
   <div class="home-page">
     <div class="home-lang-bar">
       <div class="home-lang-switcher">
