@@ -30,21 +30,34 @@ curl -X POST https://api.ixblix.app/api/integrators/register \
 | ---------------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `name`           | Yes      | Display name of your integrator.                                                                                                                                                                                                      |
 | `hostname`       | Yes      | Unique hostname for this integrator. Must be unique across all integrators.                                                                                                                                                           |
-| `callbackUrl`    | Yes      | URL where ixblix sends credentials for verification.                                                                                                                                                                                  |
+| `callbackUrl`    | Yes      | URL where ixblix sends the registration challenge and, after it succeeds, the integrator credentials.                                                                                                                                 |
 | `force`          | No       | If true, allows replacing an existing verified hostname registration. Defaults to false.                                                                                                                                              |
 | `subscriptionId` | No       | Subscription identifier in the format `{paymentProvider}:{id}`. The `id` portion is opaque to the API and interpreted by the payment provider internally. Required when the assigned payment provider needs a subscription reference. |
 
-**Callback Verification:** ixblix sends a POST to your `callbackUrl` with:
+**Callback Verification:** registration uses a three-phase callback flow:
+
+1. **Challenge:** ixblix sends a POST to your `callbackUrl` with:
 
 ```json
 {
-  "integratorId": "int_a1b2c3d4-e5f6-7890-abcd-ef1234567890",
-  "accessToken": "ixblix_integrator_token_xxxxxxxxxxxx",
-  "createdAt": "2026-01-15T10:30:00.000Z"
+  "challenge": "mycrm.example.com"
 }
 ```
 
-Your endpoint must respond with `200 OK` to confirm receipt. Store these credentials securely.
+Your endpoint must respond with `200 OK` and the **exact registration payload** you sent in step 1.
+
+2. **Credentials:** ixblix sends a POST to your `callbackUrl` with:
+
+```json
+{
+  "event": "INTEGRATOR_CREDENTIALS",
+  "integratorId": "int_a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+  "accessToken": "ixblix_integrator_token_xxxxxxxxxxxx",
+  "timestamp": "2026-01-15T10:30:00.000Z"
+}
+```
+
+Your endpoint must echo the credentials payload back with `200 OK`. Store the credentials securely.
 
 ### Step 2: List Available Plans
 

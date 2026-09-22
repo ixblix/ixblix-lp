@@ -35,8 +35,9 @@ await integratorClient.registerIntegrator({
   // subscriptionId: '{paymentProvider}:{id}',
 });
 
-// ixblix will POST to your callbackUrl with credentials
-// Check your callback endpoint for integratorId + accessToken
+// ixblix will POST a challenge to your callbackUrl, then POST the credentials.
+// Your callback must first echo the original registration payload, then echo
+// the credentials payload.
 ```
 
 **Request fields:**
@@ -45,7 +46,7 @@ await integratorClient.registerIntegrator({
 | ---------------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `name`           | Yes      | Display name of your integrator.                                                                                                                                                                                                      |
 | `hostname`       | Yes      | Unique hostname for this integrator. Must be unique across all integrators.                                                                                                                                                           |
-| `callbackUrl`    | Yes      | URL where ixblix sends credentials for verification.                                                                                                                                                                                  |
+| `callbackUrl`    | Yes      | URL where ixblix sends the registration challenge and, after it succeeds, the integrator credentials.                                                                                                                                 |
 | `force`          | No       | If true, allows replacing an existing verified hostname registration.                                                                                                                                                                 |
 | `subscriptionId` | No       | Subscription identifier in the format `{paymentProvider}:{id}`. The `id` portion is opaque to the API and interpreted by the payment provider internally. Required when the assigned payment provider needs a subscription reference. |
 
@@ -56,13 +57,25 @@ import express from "express";
 const app = express();
 app.use(express.json());
 
+const registrationPayload = {
+  name: "My CRM Platform",
+  hostname: "mycrm.example.com",
+  callbackUrl: "https://mycrm.example.com/ixblix/callback",
+};
+
 app.post("/ixblix/callback", async (req, res) => {
-  const { integratorId, accessToken } = req.body;
+  // Phase 2: answer the challenge with the original registration payload
+  if (req.body?.challenge) {
+    return res.status(200).json(registrationPayload);
+  }
 
-  // Store credentials securely (encrypted database, vault)
-  await saveIntegratorCredentials({ integratorId, accessToken });
+  // Phase 3: store credentials and echo them back
+  if (req.body?.event === "INTEGRATOR_CREDENTIALS") {
+    const { integratorId, accessToken } = req.body;
+    await saveIntegratorCredentials({ integratorId, accessToken });
+    return res.status(200).json(req.body);
+  }
 
-  // Must respond 200 to confirm receipt
   res.status(200).json({ received: true });
 });
 ```

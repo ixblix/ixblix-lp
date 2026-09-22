@@ -33,15 +33,28 @@ const locale: Locale = 'pt';
     </tbody>
   </table>
 
-  <h2>Verificação via Callback</h2>
-  <p>O ixblix envia um POST para seu <code>callbackUrl</code> com:</p>
-  <CodeBlock language="json" code={`{
+  <h2>Fluxo de Verificação via Callback</h2>
+  <p>O registro acontece em três fases:</p>
+  <ol>
+    <li>Você chama <code>POST /api/integrators/register</code> com seus dados.</li>
+    <li>O ixblix envia um desafio para seu <code>callbackUrl</code>:
+      <CodeBlock language="json" code={`{
+  "challenge": "mycrm.example.com"
+}`} title="Payload do desafio" />
+      Seu endpoint deve responder com <code>200 OK</code> e o <strong>payload de registro exato</strong> que você enviou na fase 1.
+    </li>
+    <li>O ixblix envia suas credenciais para o mesmo <code>callbackUrl</code>:
+      <CodeBlock language="json" code={`{
+  "event": "INTEGRATOR_CREDENTIALS",
   "integratorId": "int_a1b2c3d4-e5f6-7890-abcd-ef1234567890",
   "accessToken": "ixblix_integrator_token_xxxxxxxxxxxx",
-  "createdAt": "2026-01-15T10:30:00.000Z"
-}`} title="Payload do callback" />
+  "timestamp": "2026-01-15T10:30:00.000Z"
+}`} title="Payload de credenciais" />
+      Seu endpoint deve ecoar o payload de credenciais de volta com <code>200 OK</code>.
+    </li>
+  </ol>
 
-  <p>Seu endpoint deve responder com <code>200 OK</code> para confirmar o recebimento. Armazene essas credenciais com segurança — elas são usadas em todas as chamadas de API subsequentes.</p>
+  <p>Armazene as credenciais com segurança — elas são usadas em todas as chamadas de API subsequentes.</p>
 
   <h2>Usando as Credenciais</h2>
   <p>Use as credenciais do integrador como HTTP Basic Auth:</p>
@@ -53,9 +66,26 @@ const locale: Locale = 'pt';
 const app = express();
 app.use(express.json());
 
+// Payload de registro enviado na fase 1
+const registrationPayload = {
+  name: "My CRM Platform",
+  hostname: "mycrm.example.com",
+  callbackUrl: "https://mycrm.example.com/ixblix/callback",
+};
+
 app.post('/ixblix/callback', async (req, res) => {
-  const { integratorId, accessToken } = req.body;
-  await saveIntegratorCredentials({ integratorId, accessToken });
+  // Fase 2: responde ao desafio com o payload de registro original
+  if (req.body?.challenge) {
+    return res.status(200).json(registrationPayload);
+  }
+
+  // Fase 3: armazena as credenciais e as ecoa de volta
+  if (req.body?.event === "INTEGRATOR_CREDENTIALS") {
+    const { integratorId, accessToken } = req.body;
+    await saveIntegratorCredentials({ integratorId, accessToken });
+    return res.status(200).json(req.body);
+  }
+
   res.status(200).json({ received: true });
 });`} title="Handler Express" />
 
