@@ -28,6 +28,7 @@ const locale: Locale = 'pt';
       <tr><td><code>name</code></td><td>Sim</td><td>Nome de exibição do seu integrador.</td></tr>
       <tr><td><code>callbackUrl</code></td><td>Sim</td><td>URL para onde o ixblix envia as credenciais para verificação.</td></tr>
       <tr><td><code>contactEmail</code></td><td>Sim</td><td>Email de contato do integrador.</td></tr>
+      <tr><td><code>subscriptionId</code></td><td>Não</td><td>Identificador de assinatura no formato <code>{`{paymentProvider}:{id}`}</code>. A parte <code>id</code> é opaca para a API e interpretada internamente pelo provedor de pagamento. Obrigatório quando o provedor de pagamento atribuído precisa de uma referência de assinatura.</td></tr>
     </tbody>
   </table>
 

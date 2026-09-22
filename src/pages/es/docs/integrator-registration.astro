@@ -28,6 +28,7 @@ const locale: Locale = 'es';
       <tr><td><code>name</code></td><td>Sí</td><td>Nombre de visualización de su integrador.</td></tr>
       <tr><td><code>callbackUrl</code></td><td>Sí</td><td>URL donde ixblix envía las credenciales para verificación.</td></tr>
       <tr><td><code>contactEmail</code></td><td>Sí</td><td>Email de contacto del integrador.</td></tr>
+      <tr><td><code>subscriptionId</code></td><td>No</td><td>Identificador de suscripción en el formato <code>{`{paymentProvider}:{id}`}</code>. La parte <code>id</code> es opaca para la API y es interpretada internamente por el proveedor de pago. Obligatorio cuando el proveedor de pago asignado necesita una referencia de suscripción.</td></tr>
     </tbody>
   </table>
 

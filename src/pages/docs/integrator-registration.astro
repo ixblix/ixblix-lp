@@ -28,6 +28,7 @@ const locale: Locale = 'en';
       <tr><td><code>name</code></td><td>Yes</td><td>Display name of your integrator.</td></tr>
       <tr><td><code>callbackUrl</code></td><td>Yes</td><td>URL where ixblix sends credentials for verification.</td></tr>
       <tr><td><code>contactEmail</code></td><td>Yes</td><td>Contact email for the integrator.</td></tr>
+      <tr><td><code>subscriptionId</code></td><td>No</td><td>Subscription identifier in the format <code>{`{paymentProvider}:{id}`}</code>. The <code>id</code> portion is opaque to the API and interpreted by the payment provider internally. Required when the assigned payment provider needs a subscription reference.</td></tr>
     </tbody>
   </table>
 

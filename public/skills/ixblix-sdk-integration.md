@@ -31,11 +31,22 @@ const result = await client.integrator.register({
   name: 'My CRM Platform',
   callbackUrl: 'https://mycrm.example.com/ixblix/callback',
   contactEmail: 'admin@mycrm.example.com',
+  // Optional: subscription identifier when required by the assigned payment provider
+  // subscriptionId: '{paymentProvider}:{id}',
 });
 
 // ixblix will POST to your callbackUrl with credentials
 // Check your callback endpoint for integratorId + accessToken
 ```
+
+**Request fields:**
+
+| Field | Required | Description |
+|-------|----------|-------------|
+| `name` | Yes | Display name of your integrator. |
+| `callbackUrl` | Yes | URL where ixblix sends credentials for verification. |
+| `contactEmail` | Yes | Contact email for the integrator. |
+| `subscriptionId` | No | Subscription identifier in the format `{paymentProvider}:{id}`. The `id` portion is opaque to the API and interpreted by the payment provider internally. Required when the assigned payment provider needs a subscription reference. |
 
 **Callback Handler:**
 

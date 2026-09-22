@@ -24,6 +24,15 @@ curl -X POST https://api.ixblix.app/api/integrators/register \
   }'
 ```
 
+**Request fields:**
+
+| Field | Required | Description |
+|-------|----------|-------------|
+| `name` | Yes | Display name of your integrator. |
+| `callbackUrl` | Yes | URL where ixblix sends credentials for verification. |
+| `contactEmail` | Yes | Contact email for the integrator. |
+| `subscriptionId` | No | Subscription identifier in the format `{paymentProvider}:{id}`. The `id` portion is opaque to the API and interpreted by the payment provider internally. Required when the assigned payment provider needs a subscription reference. |
+
 **Callback Verification:** ixblix sends a POST to your `callbackUrl` with:
 ```json
 {
