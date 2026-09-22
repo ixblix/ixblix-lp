@@ -127,11 +127,14 @@ function homePath(loc: Locale): string {
         let newPath;
         
         if (targetLang === 'en') {
-          // Remove language prefix
-          newPath = path.replace(/^\/(pt|es)/, '') || '/';
+          // Remove language prefix: /pt/docs/quickstart → /docs/quickstart
+          newPath = path.replace(/^\/(pt|es)(\/|$)/, '/');
+        } else if (currentLang === 'en') {
+          // Add language prefix: /docs/quickstart → /pt/docs/quickstart
+          newPath = `/${targetLang}${path}`;
         } else {
-          // Add or replace language prefix
-          newPath = path.replace(/^\/(pt|es)?/, `/${targetLang}`);
+          // Replace language prefix: /pt/docs/quickstart → /es/docs/quickstart
+          newPath = path.replace(/^\/(pt|es)/, `/${targetLang}`);
         }
         
         window.location.replace(newPath);
