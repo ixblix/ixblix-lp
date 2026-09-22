@@ -18,22 +18,23 @@ npm install @ixblix/sdk-js
 
 ### Step 1: Register as an Integrator
 
-Register your application (CRM, help desk, ticket system) to receive API credentials.
+Register your application (CRM, help desk, ticket system) to receive API credentials. This is a direct REST API call (the SDK does not wrap integrator registration):
 
 ```typescript
-import { IxblixClient } from '@ixblix/sdk-js';
-
-const client = new IxblixClient({
-  baseUrl: 'https://api.ixblix.app',
-});
-
-const result = await client.integrator.register({
-  name: 'My CRM Platform',
-  callbackUrl: 'https://mycrm.example.com/ixblix/callback',
-  contactEmail: 'admin@mycrm.example.com',
-  // Optional: subscription identifier when required by the assigned payment provider
-  // subscriptionId: '{paymentProvider}:{id}',
-});
+const response = await fetch(
+  "https://api.ixblix.app/api/integrators/register",
+  {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      name: "My CRM Platform",
+      hostname: "mycrm.example.com",
+      callbackUrl: "https://mycrm.example.com/ixblix/callback",
+      // Optional: subscription identifier when required by the assigned payment provider
+      // subscriptionId: '{paymentProvider}:{id}',
+    }),
+  },
+);
 
 // ixblix will POST to your callbackUrl with credentials
 // Check your callback endpoint for integratorId + accessToken
@@ -41,26 +42,27 @@ const result = await client.integrator.register({
 
 **Request fields:**
 
-| Field | Required | Description |
-|-------|----------|-------------|
-| `name` | Yes | Display name of your integrator. |
-| `callbackUrl` | Yes | URL where ixblix sends credentials for verification. |
-| `contactEmail` | Yes | Contact email for the integrator. |
-| `subscriptionId` | No | Subscription identifier in the format `{paymentProvider}:{id}`. The `id` portion is opaque to the API and interpreted by the payment provider internally. Required when the assigned payment provider needs a subscription reference. |
+| Field            | Required | Description                                                                                                                                                                                                                           |
+| ---------------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `name`           | Yes      | Display name of your integrator.                                                                                                                                                                                                      |
+| `hostname`       | Yes      | Unique hostname for this integrator. Must be unique across all integrators.                                                                                                                                                           |
+| `callbackUrl`    | Yes      | URL where ixblix sends credentials for verification.                                                                                                                                                                                  |
+| `force`          | No       | If true, allows replacing an existing verified hostname registration.                                                                                                                                                                 |
+| `subscriptionId` | No       | Subscription identifier in the format `{paymentProvider}:{id}`. The `id` portion is opaque to the API and interpreted by the payment provider internally. Required when the assigned payment provider needs a subscription reference. |
 
 **Callback Handler:**
 
 ```typescript
-import express from 'express';
+import express from "express";
 const app = express();
 app.use(express.json());
 
-app.post('/ixblix/callback', async (req, res) => {
+app.post("/ixblix/callback", async (req, res) => {
   const { integratorId, accessToken } = req.body;
-  
+
   // Store credentials securely (encrypted database, vault)
   await saveIntegratorCredentials({ integratorId, accessToken });
-  
+
   // Must respond 200 to confirm receipt
   res.status(200).json({ received: true });
 });
@@ -69,38 +71,37 @@ app.post('/ixblix/callback', async (req, res) => {
 ### Step 2: Create an Authenticated Client
 
 ```typescript
-import { IxblixClient } from '@ixblix/sdk-js';
+import { IxblixClient, loadOrCreateOperatorKey } from "@ixblix/sdk-js";
 
 const integratorClient = new IxblixClient({
-  baseUrl: 'https://api.ixblix.app',
-  integratorId: 'int_a1b2c3d4-...',
-  accessToken: 'ixblix_integrator_token_xxxx',
+  baseUrl: "https://api.ixblix.app",
+  integratorId: "int_a1b2c3d4-...",
+  integratorAccessToken: "ixblix_integrator_token_xxxx",
 });
 
 // Verify credentials
-const profile = await integratorClient.integrator.getProfile();
-console.log('Registered as:', profile.name);
+const profile = await integratorClient.getProfile();
+console.log("Registered as:", profile.name);
 ```
 
 ### Step 3: List Available Plans
 
 ```typescript
-const { plans } = await integratorClient.plans.list();
-console.log('Available plans:', plans);
+const plans = await integratorClient.listPlans();
+console.log("Available plans:", plans);
 ```
 
 ### Step 4: Register a Company
 
 ```typescript
-const { company, checkoutUrl } = await integratorClient.company.register({
-  name: 'Acme Corporation',
+const { company, payment } = await integratorClient.registerCompany({
+  name: "Acme Corporation",
   planId: plans[0].id,
-  handle: 'acme',
-  website: 'https://acme.example.com',
+  handle: "acme",
 });
 
-// Redirect the company owner to checkoutUrl to complete payment
-console.log('Checkout URL:', checkoutUrl);
+// Redirect the company owner to payment.checkoutUrl to complete payment
+console.log("Checkout URL:", payment.checkoutUrl);
 ```
 
 ### Step 5: Activate the Company
@@ -108,15 +109,16 @@ console.log('Checkout URL:', checkoutUrl);
 After payment confirmation:
 
 ```typescript
-const { apiKey } = await integratorClient.company.activate(
+const { apiKey } = await integratorClient.activateCompany(
   company.id,
-  transactionId,
+  payment.transactionId,
 );
 
 // Create company-scoped client
 const companyClient = new IxblixClient({
-  baseUrl: 'https://api.ixblix.app',
+  baseUrl: "https://api.ixblix.app",
   apiKey,
+  operatorKey: operatorKey, // from Step 7
 });
 ```
 
@@ -125,8 +127,8 @@ const companyClient = new IxblixClient({
 ### Step 6: Configure Webhook URL
 
 ```typescript
-const { webhookSecret } = await companyClient.company.setWebhook({
-  url: 'https://mycrm.example.com/ixblix/webhooks',
+const { webhookSecret } = await companyClient.updateWebhook({
+  webhookUrl: "https://mycrm.example.com/ixblix/webhooks",
 });
 
 // Store webhookSecret for signature verification
@@ -135,34 +137,39 @@ const { webhookSecret } = await companyClient.company.setWebhook({
 ### Step 7: Generate and Register Operator Keypair
 
 ```typescript
-import { generateOperatorKeyPair, loadOrCreateOperatorKey } from '@ixblix/sdk-js';
+import {
+  generateOperatorKeyPair,
+  loadOrCreateOperatorKey,
+} from "@ixblix/sdk-js";
 
 // Option A: Generate new keypair
 const { publicKey, privateKey } = await generateOperatorKeyPair();
 
 // Option B: Load or create (persists to disk)
 const operatorKey = await loadOrCreateOperatorKey({
-  path: './keys/operator.json',
+  path: "./keys/operator.json",
 });
 
 // Register public key
-await companyClient.company.setEncryptionKey({
-  publicKey: operatorKey.publicKey,
+await companyClient.registerEncryptionKey({
+  keyId: operatorKey.keyId,
+  publicKey: operatorKey.publicKeySpki,
 });
 ```
 
 ### Step 8: Create a Conversation
 
 ```typescript
-const { conversation, deeplink } = await companyClient.conversation.create({
-  contactName: 'Jane Doe',
-  contactExternalId: 'crm-contact-123',
-  originChannel: 'whatsapp',
-  metadata: { ticketId: 'TK-456' },
+const { conversation, deeplink } = await companyClient.createConversation({
+  contact: {
+    externalId: "crm-contact-123",
+    name: "Jane Doe",
+    metadata: { ticketId: "TK-456" },
+  },
 });
 
 // Send the deeplink to your customer via WhatsApp, SMS, etc.
-console.log('Share this link:', deeplink);
+console.log("Share this link:", deeplink);
 ```
 
 ### Step 9: Handle Customer Join
@@ -170,70 +177,67 @@ console.log('Share this link:', deeplink);
 When the customer opens the deeplink, you receive a `CUSTOMER_JOINED` webhook:
 
 ```typescript
-import { verifyWebhook, encryptToRecipient } from '@ixblix/sdk-js';
+import {
+  verifyWebhook,
+  encryptToRecipient,
+  WEBHOOK_SIGNATURE_HEADER,
+} from "@ixblix/sdk-js";
 
-app.post('/ixblix/webhooks', async (req, res) => {
+app.post("/ixblix/webhooks", async (req, res) => {
   // Verify signature
-  const isValid = verifyWebhook(req.body, req.headers, webhookSecret);
-  if (!isValid) return res.status(401).send('Invalid signature');
+  const signature = req.headers[WEBHOOK_SIGNATURE_HEADER] as string;
+  const parsed = verifyWebhook(req.body, webhookSecret, signature);
+  const event = parsed.event;
 
-  const event = req.body;
-
-  if (event.type === 'CUSTOMER_JOINED') {
+  if (event.event === "CUSTOMER_JOINED") {
     // Store customer's public key for this conversation
-    await saveCustomerKey(event.payload.conversationId, event.payload.customerPublicKey);
-    
-    // Send welcome message
-    const encrypted = encryptToRecipient({
-      plaintext: 'Hello! How can we help you today?',
-      recipientPublicKey: event.payload.customerPublicKey,
-      senderPublicKey: operatorKey.publicKey,
-    });
+    await saveCustomerKey(event.conversationId, event.customerPublicKey);
 
-    await companyClient.message.sendCompany({
-      conversationId: event.payload.conversationId,
-      encryptedContent: encrypted.content,
-      encryptedKey: encrypted.key,
-    });
+    // Send welcome message
+    const envelope = encryptToRecipient(
+      "Hello! How can we help you today?",
+      event.customerPublicKey,
+      operatorKey.keyId,
+      operatorKey.publicKeySpki,
+    );
+
+    await companyClient.sendCompanyMessage(event.conversationId, envelope);
   }
 
-  res.status(200).send('OK');
+  res.status(200).send("OK");
 });
 ```
 
 ### Step 10: Send an Encrypted Message
 
 ```typescript
-import { encryptToRecipient } from '@ixblix/sdk-js';
+import { encryptToRecipient } from "@ixblix/sdk-js";
 
-const customerPublicKey = await getCustomerKey(conversationId);
+const keys = await companyClient.getConversationKeys(conversationId);
 
-const encrypted = encryptToRecipient({
-  plaintext: 'Hello from Acme Corp!',
-  recipientPublicKey: customerPublicKey,
-  senderPublicKey: operatorKey.publicKey,
-});
+const envelope = encryptToRecipient(
+  "Hello from Acme Corp!",
+  keys.customerPublicKey!,
+  operatorKey.keyId,
+  operatorKey.publicKeySpki,
+);
 
-await companyClient.message.sendCompany({
-  conversationId: conversation.id,
-  encryptedContent: encrypted.content,
-  encryptedKey: encrypted.key,
-});
+await companyClient.sendCompanyMessage(conversation.id, envelope);
 ```
 
 ### Step 11: Receive and Decrypt Messages
 
 ```typescript
-import { decryptEnvelope } from '@ixblix/sdk-js';
+import { decryptEnvelope } from "@ixblix/sdk-js";
 
-if (event.type === 'MESSAGE_RECEIVED') {
-  const plaintext = decryptEnvelope({
-    envelope: event.payload.encryptedContent,
-    encryptedKey: event.payload.encryptedKey,
-    recipientPrivateKey: operatorKey.privateKey,
-  });
-  
-  console.log('Customer said:', plaintext);
+if (event.event === "MESSAGE_RECEIVED") {
+  // Fetch the full message to get the encrypted content and envelope
+  const messages = await companyClient.listMessages(event.conversationId);
+  const message = messages.find((m) => m.id === event.messageId);
+  if (message) {
+    const plaintext = decryptEnvelope(message, operatorKey.privateKey);
+    console.log("Customer said:", plaintext);
+  }
 }
 ```
 
@@ -241,44 +245,66 @@ if (event.type === 'MESSAGE_RECEIVED') {
 
 ```typescript
 // Operator read (company side)
-await companyClient.message.markRead(conversationId, [messageId1, messageId2]);
+await companyClient.markMessageReadByCompany(conversationId, messageId);
 
 // Customer read triggers MESSAGE_READ webhook
-if (event.type === 'MESSAGE_READ') {
-  console.log('Messages read:', event.payload.messageIds);
+if (event.event === "MESSAGE_READ") {
+  console.log("Message read:", event.messageId, "at", event.readAt);
 }
 ```
 
 ## Rich Messages
 
-Send interactive buttons:
+Send interactive buttons using the `encryptRichMessage` helper:
 
 ```typescript
-const encrypted = encryptToRecipient({
-  plaintext: 'Please confirm your order:',
-  recipientPublicKey: customerPublicKey,
-  senderPublicKey: operatorKey.publicKey,
-  attachments: [
-    { type: 'reply', label: 'Confirm' },
-    { type: 'reply', label: 'Cancel' },
-    { type: 'url', label: 'View details', url: 'https://acme.example.com/order/123' },
-    { type: 'copy', label: 'Copy order number', value: 'ORD-2026-001234' },
-    { type: 'pix', label: 'Copy Pix code', value: '00020126580014br.gov.bcb.pix...' },
-    { type: 'vcard', name: 'Support', phone: '+5511999998888', organization: 'Acme Corp' },
-    { type: 'location', latitude: -23.5505, longitude: -46.6333, name: 'Acme Store', address: 'Av. Paulista, 1000' },
-  ],
-});
+import { encryptRichMessage } from "@ixblix/sdk-js";
 
-await companyClient.message.sendCompany({
+const keys = await companyClient.getConversationKeys(conversationId);
+
+const envelope = encryptRichMessage(
+  "Please confirm your order:",
+  {
+    buttons: [
+      { type: "reply", label: "Confirm" },
+      { type: "reply", label: "Cancel" },
+      {
+        type: "url",
+        label: "View details",
+        url: "https://acme.example.com/order/123",
+      },
+      { type: "copy", label: "Copy order number", value: "ORD-2026-001234" },
+      {
+        type: "pix",
+        label: "Copy Pix code",
+        value: "00020126580014br.gov.bcb.pix...",
+      },
+    ],
+    vcard: {
+      name: "Support",
+      phone: "+5511999998888",
+      organization: "Acme Corp",
+    },
+  },
+  keys.customerPublicKey!,
+  operatorKey.keyId,
+  operatorKey.publicKeySpki,
+);
+
+await companyClient.sendCompanyMessage(
   conversationId,
-  encryptedContent: encrypted.content,
-  encryptedKey: encrypted.key,
-});
+  envelope,
+  "text",
+  undefined,
+  undefined,
+  envelope.attachments,
+);
 ```
 
 **Rendering rules:**
-- ≤ 3 buttons: rendered inline
-- > 3 buttons: rendered in modal
+
+- \u2264 3 buttons: rendered inline
+- \> 3 buttons: rendered in modal
 - Only `reply` buttons send messages back to operator
 
 ## Media Attachments
@@ -286,78 +312,64 @@ await companyClient.message.sendCompany({
 Upload and send encrypted media:
 
 ```typescript
-import { encryptMediaToRecipient } from '@ixblix/sdk-js';
-import fs from 'node:fs';
+import { encryptMediaToRecipient } from "@ixblix/sdk-js";
+import fs from "node:fs";
 
-const fileBuffer = fs.readFileSync('./invoice.pdf');
+const fileBuffer = fs.readFileSync("./invoice.pdf");
+const keys = await companyClient.getConversationKeys(conversationId);
 
-const encrypted = encryptMediaToRecipient({
+const envelope = encryptMediaToRecipient(
   fileBuffer,
-  recipientPublicKey: customerPublicKey,
-  senderPublicKey: operatorKey.publicKey,
-});
+  keys.customerPublicKey!,
+  operatorKey.keyId,
+  operatorKey.publicKeySpki,
+);
 
-// Upload encrypted file
-const uploadResponse = await fetch('https://api.ixblix.app/api/media/company', {
-  method: 'POST',
-  headers: {
-    'X-API-Key': apiKey,
-    'Content-Type': 'application/octet-stream',
-    'X-Media-Type': 'document',
-    'X-Media-Filename': 'invoice.pdf',
-    'X-Media-Mime': 'application/pdf',
-  },
-  body: encrypted.content,
-});
-
-const { mediaId } = await uploadResponse.json();
-
-// Send message with media reference
-await companyClient.message.sendCompany({
+// Upload encrypted file (the SDK sends it as multipart/form-data)
+const message = await companyClient.sendCompanyMedia(
   conversationId,
-  encryptedContent: encrypted.content,
-  encryptedKey: encrypted.key,
-  mediaId,
-});
+  { data: fileBuffer, fileName: "invoice.pdf", mimeType: "application/pdf" },
+  envelope,
+);
+
+console.log("Media message sent:", message.id);
 ```
 
 **Download and decrypt received media:**
 
 ```typescript
-import { decryptMediaEnvelope } from '@ixblix/sdk-js';
+import { decryptMediaEnvelope } from "@ixblix/sdk-js";
 
-const encryptedBuffer = await downloadMedia(mediaId);
+const { data, media } = await companyClient.downloadCompanyMedia(
+  message.mediaId!,
+);
 
-const decrypted = decryptMediaEnvelope({
-  envelope: encryptedBuffer,
-  encryptedKey: messageEncryptedKey,
-  recipientPrivateKey: operatorKey.privateKey,
-});
+const decrypted = decryptMediaEnvelope(data, message, operatorKey.privateKey);
 
-fs.writeFileSync('./invoice_decrypted.pdf', decrypted);
+fs.writeFileSync("./invoice_decrypted.pdf", decrypted);
 ```
 
 ## Presence & Typing Indicators
 
 ```typescript
 // Report operator typing
-await companyClient.conversation.reportPresence(conversationId, 'TYPING');
+await companyClient.reportCompanyPresence(conversationId, "typing");
 
 // Set operator identity
-await companyClient.conversation.setOperator(conversationId, {
-  name: 'Sarah from Support',
-  avatarUrl: 'https://acme.example.com/avatars/sarah.png',
+await companyClient.updateOperator(conversationId, {
+  name: "Sarah from Support",
+  image: "https://acme.example.com/avatars/sarah.png",
 });
 
 // Handle customer presence webhooks
-if (event.type === 'TYPING') {
-  console.log('Customer is typing...');
+if (event.event === "TYPING") {
+  console.log("Customer is typing...");
 }
-if (event.type === 'RECORDING') {
-  console.log('Customer is recording audio...');
+if (event.event === "RECORDING") {
+  console.log("Customer is recording audio...");
 }
-if (event.type === 'CHAT_CLOSED') {
-  console.log('Customer closed the chat window');
+if (event.event === "CHAT_CLOSED") {
+  console.log("Customer closed the chat window");
 }
 ```
 
@@ -366,27 +378,30 @@ if (event.type === 'CHAT_CLOSED') {
 Allow customers to transfer encryption keys between devices:
 
 ```typescript
-import crypto from 'node:crypto';
+import crypto from "node:crypto";
 
 // Source device: Create transfer
 const pin = Math.floor(100000 + Math.random() * 900000).toString();
 const salt = crypto.randomBytes(16);
-const kek = crypto.pbkdf2Sync(pin, salt, 200_000, 32, 'sha256');
+const kek = crypto.pbkdf2Sync(pin, salt, 200_000, 32, "sha256");
 const iv = crypto.randomBytes(12);
-const cipher = crypto.createCipheriv('aes-256-gcm', kek, iv);
+const cipher = crypto.createCipheriv("aes-256-gcm", kek, iv);
 const keypairJson = JSON.stringify({ publicKey, privateKey });
-const encrypted = Buffer.concat([cipher.update(keypairJson, 'utf8'), cipher.final()]);
+const ciphertext = Buffer.concat([
+  cipher.update(keypairJson, "utf8"),
+  cipher.final(),
+]);
 const authTag = cipher.getAuthTag();
 
-const response = await fetch('https://api.ixblix.app/api/key-transfer', {
-  method: 'POST',
-  headers: { 'Content-Type': 'application/json' },
+const response = await fetch("https://api.ixblix.app/api/key-transfer", {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
   body: JSON.stringify({
-    conversationToken: deeplinkToken,
-    encryptedPayload: encrypted.toString('base64'),
-    salt: salt.toString('base64'),
-    iv: iv.toString('base64'),
-    authTag: authTag.toString('base64'),
+    ciphertext: ciphertext.toString("base64"),
+    iv: iv.toString("base64"),
+    salt: salt.toString("base64"),
+    kdf: { alg: "PBKDF2-SHA256", iterations: 200_000 },
+    publicKeySpki: publicKey, // base64 SPKI public key
   }),
 });
 
@@ -394,31 +409,60 @@ const { transferId } = await response.json();
 // Show PIN and link to user: https://app.ixblix.app/transfer/{transferId}
 
 // Target device: Retrieve and decrypt
-const transferResponse = await fetch(`https://api.ixblix.app/api/key-transfer/${transferId}`);
-const { encryptedPayload, salt: transferSalt, iv: transferIv, authTag: transferAuthTag } = await transferResponse.json();
+const transferResponse = await fetch(
+  `https://api.ixblix.app/api/key-transfer/${transferId}`,
+);
+const {
+  ciphertext: encCiphertext,
+  salt: transferSalt,
+  iv: transferIv,
+  kdf,
+} = await transferResponse.json();
 
-const transferKek = crypto.pbkdf2Sync(pin, Buffer.from(transferSalt, 'base64'), 200_000, 32, 'sha256');
-const decipher = crypto.createDecipheriv('aes-256-gcm', transferKek, Buffer.from(transferIv, 'base64'));
-decipher.setAuthTag(Buffer.from(transferAuthTag, 'base64'));
-const decrypted = Buffer.concat([decipher.update(Buffer.from(encryptedPayload, 'base64')), decipher.final()]);
-const { publicKey: transferredPubKey, privateKey: transferredPrivKey } = JSON.parse(decrypted.toString('utf8'));
+const transferKek = crypto.pbkdf2Sync(
+  pin,
+  Buffer.from(transferSalt, "base64"),
+  kdf.iterations,
+  32,
+  "sha256",
+);
+const decipher = crypto.createDecipheriv(
+  "aes-256-gcm",
+  transferKek,
+  Buffer.from(transferIv, "base64"),
+);
+decipher.setAuthTag(Buffer.from(encCiphertext, "base64").subarray(-16));
+const decrypted = Buffer.concat([
+  decipher.update(Buffer.from(encCiphertext, "base64").subarray(0, -16)),
+  decipher.final(),
+]);
+const { publicKey: transferredPubKey, privateKey: transferredPrivKey } =
+  JSON.parse(decrypted.toString("utf8"));
 
 // Confirm transfer
-await fetch(`https://api.ixblix.app/api/key-transfer/${transferId}/confirm`, { method: 'POST' });
+await fetch(`https://api.ixblix.app/api/key-transfer/${transferId}/confirm`, {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({ publicKeySpki: transferredPubKey }),
+});
 ```
 
 ## Webhook Event Types
 
-| Event | When | Key Payload Fields |
-|---|---|---|
-| `MESSAGE_RECEIVED` | Customer sends a message | `conversationId`, `messageId`, `encryptedContent`, `encryptedKey` |
-| `MESSAGE_READ` | Customer reads company messages | `conversationId`, `messageIds` |
-| `CUSTOMER_JOINED` | Customer opens chat and registers key | `conversationId`, `customerPublicKey` |
-| `CONVERSATION_CLOSED` | Conversation is closed | `conversationId`, `closedBy` |
-| `TYPING` | Customer starts typing | `conversationId` |
-| `RECORDING` | Customer records audio | `conversationId` |
-| `CHAT_CLOSED` | Customer closes chat window | `conversationId` |
-| `BALANCE_LOW` | Company credit balance is low | `companyId`, `balance`, `threshold` |
+All webhook events use a flat JSON structure with an `event` field indicating the type. They are signed with HMAC-SHA256 via the `X-Ixblix-Signature` header.
+
+| Event                 | When                                  | Key Fields                                  |
+| --------------------- | ------------------------------------- | ------------------------------------------- |
+| `MESSAGE_RECEIVED`    | Contact sends a message               | `conversationId`, `messageId`, `replyToId?` |
+| `MESSAGE_READ`        | Customer reads a company message      | `conversationId`, `messageId`, `readAt`     |
+| `CUSTOMER_JOINED`     | Customer opens chat and registers key | `conversationId`, `customerPublicKey`       |
+| `CONVERSATION_CLOSED` | Conversation is closed                | `conversationId`                            |
+| `TYPING`              | Customer starts typing                | `conversationId`, `type: "typing"`          |
+| `STOPPED_TYPING`      | Customer stops typing                 | `conversationId`, `type: "stopped"`         |
+| `RECORDING`           | Customer records audio                | `conversationId`, `type: "recording"`       |
+| `CHAT_CLOSED`         | Customer closes chat window           | `conversationId`, `type: "chat_closed"`     |
+| `BALANCE_LOW`         | Company credit balance is low         | `companyId`, `balanceCents`                 |
+| `COMPANY_ACTIVATED`   | Company activated after payment       | `companyId`, `transactionId`, `apiKey`      |
 
 ## Error Handling
 
@@ -426,13 +470,13 @@ await fetch(`https://api.ixblix.app/api/key-transfer/${transferId}/confirm`, { m
 import { IxblixError } from '@ixblix/sdk-js';
 
 try {
-  await companyClient.conversation.create({ ... });
+  await companyClient.createConversation({ ... });
 } catch (err) {
   if (err instanceof IxblixError) {
     console.error('API Error:', err.code);     // "VALIDATION_ERROR"
-    console.error('Message:', err.message);    // "The 'contactName' field..."
-    console.error('Status:', err.statusCode);  // 400
-    console.error('Details:', err.details);    // [{ field, message }]
+    console.error('Message:', err.message);    // "The 'contact.externalId' field..."
+    console.error('Status:', err.status);      // 400
+    console.error('Details:', err.details);    // [{ path, message }]
   }
 }
 ```
@@ -446,9 +490,9 @@ async function withRetry<T>(fn: () => Promise<T>, maxRetries = 3): Promise<T> {
       return await fn();
     } catch (err) {
       if (err instanceof IxblixError) {
-        const isRetryable = err.statusCode === 429 || err.statusCode >= 500;
+        const isRetryable = err.status === 429 || err.status >= 500;
         if (!isRetryable || attempt === maxRetries) throw err;
-        
+
         const delay = Math.min(1000 * 2 ** attempt, 10_000);
         const jitter = Math.random() * 1000;
         await new Promise((r) => setTimeout(r, delay + jitter));
@@ -457,83 +501,91 @@ async function withRetry<T>(fn: () => Promise<T>, maxRetries = 3): Promise<T> {
       }
     }
   }
-  throw new Error('Unreachable');
+  throw new Error("Unreachable");
 }
 ```
 
 ## Complete Webhook Handler Example
 
 ```typescript
-import express from 'express';
+import express from "express";
 import {
   IxblixClient,
   verifyWebhook,
   encryptToRecipient,
   decryptEnvelope,
   loadOrCreateOperatorKey,
-} from '@ixblix/sdk-js';
+  WEBHOOK_SIGNATURE_HEADER,
+} from "@ixblix/sdk-js";
 
 const app = express();
 app.use(express.json());
 
-const API_URL = 'https://api.ixblix.app';
-const operatorKey = await loadOrCreateOperatorKey({ path: './keys/operator.json' });
+const API_URL = "https://api.ixblix.app";
+const operatorKey = await loadOrCreateOperatorKey({
+  path: "./keys/operator.json",
+});
 const webhookSecret = process.env.WEBHOOK_SECRET!;
 const apiKey = process.env.COMPANY_API_KEY!;
 
-const companyClient = new IxblixClient({ baseUrl: API_URL, apiKey });
-
-app.post('/ixblix/webhooks', async (req, res) => {
-  if (!verifyWebhook(req.body, req.headers, webhookSecret)) {
-    return res.status(401).send('Invalid signature');
-  }
-
-  const event = req.body;
-
-  switch (event.type) {
-    case 'CUSTOMER_JOINED': {
-      await saveCustomerKey(event.payload.conversationId, event.payload.customerPublicKey);
-      
-      const encrypted = encryptToRecipient({
-        plaintext: 'Hello! How can we help?',
-        recipientPublicKey: event.payload.customerPublicKey,
-        senderPublicKey: operatorKey.publicKey,
-      });
-
-      await companyClient.message.sendCompany({
-        conversationId: event.payload.conversationId,
-        encryptedContent: encrypted.content,
-        encryptedKey: encrypted.key,
-      });
-      break;
-    }
-
-    case 'MESSAGE_RECEIVED': {
-      const customerPubKey = await getCustomerKey(event.payload.conversationId);
-      const plaintext = decryptEnvelope({
-        envelope: event.payload.encryptedContent,
-        encryptedKey: event.payload.encryptedKey,
-        recipientPrivateKey: operatorKey.privateKey,
-      });
-      
-      console.log(`Customer: ${plaintext}`);
-      // Create ticket in your system, route to operator, etc.
-      break;
-    }
-
-    case 'MESSAGE_READ':
-      console.log('Messages read:', event.payload.messageIds);
-      break;
-
-    case 'CONVERSATION_CLOSED':
-      await deleteCustomerKey(event.payload.conversationId);
-      break;
-  }
-
-  res.status(200).send('OK');
+const companyClient = new IxblixClient({
+  baseUrl: API_URL,
+  apiKey,
+  operatorKey,
 });
 
-app.listen(4000, () => console.log('Webhook server running on port 4000'));
+app.post("/ixblix/webhooks", async (req, res) => {
+  const signature = req.headers[WEBHOOK_SIGNATURE_HEADER] as string;
+  let parsed;
+  try {
+    parsed = verifyWebhook(req.body, webhookSecret, signature);
+  } catch {
+    return res.status(401).send("Invalid signature");
+  }
+  const event = parsed.event;
+
+  switch (event.event) {
+    case "CUSTOMER_JOINED": {
+      await saveCustomerKey(event.conversationId, event.customerPublicKey);
+
+      const envelope = encryptToRecipient(
+        "Hello! How can we help?",
+        event.customerPublicKey,
+        operatorKey.keyId,
+        operatorKey.publicKeySpki,
+      );
+
+      await companyClient.sendCompanyMessage(event.conversationId, envelope);
+      break;
+    }
+
+    case "MESSAGE_RECEIVED": {
+      const keys = await companyClient.getConversationKeys(
+        event.conversationId,
+      );
+      const messages = await companyClient.listMessages(event.conversationId);
+      const message = messages.find((m) => m.id === event.messageId);
+      if (message && keys.customerPublicKey) {
+        const plaintext = decryptEnvelope(message, operatorKey.privateKey);
+        console.log(`Customer: ${plaintext}`);
+        // Create ticket in your system, route to operator, etc.
+      }
+      break;
+    }
+
+    case "MESSAGE_READ":
+      console.log("Message read:", event.messageId, "at", event.readAt);
+      break;
+
+    case "CONVERSATION_CLOSED":
+      await deleteCustomerKey(event.conversationId);
+      break;
+  }
+
+  res.status(200).send("OK");
+});
+
+app.listen(4000, () => console.log("Webhook server running on port 4000"));
 ```
 
 ## SDK Methods Reference
@@ -543,81 +595,150 @@ app.listen(4000, () => console.log('Webhook server running on port 4000'));
 ```typescript
 // Integrator auth
 const integratorClient = new IxblixClient({
-  baseUrl: 'https://api.ixblix.app',
-  integratorId: 'int_xxxx',
-  accessToken: 'ixblix_integrator_token_xxxx',
+  baseUrl: "https://api.ixblix.app",
+  integratorId: "int_xxxx",
+  integratorAccessToken: "ixblix_integrator_token_xxxx",
 });
 
 // Company auth
 const companyClient = new IxblixClient({
-  baseUrl: 'https://api.ixblix.app',
-  apiKey: 'smci_xxxx',
+  baseUrl: "https://api.ixblix.app",
+  apiKey: "smci_xxxx",
+  operatorKey, // OperatorKeyPair from loadOrCreateOperatorKey
 });
 ```
 
-### Integrator Methods
+### Company Onboarding (integrator auth)
 
 ```typescript
-await integratorClient.integrator.register({ name, callbackUrl, contactEmail });
-const profile = await integratorClient.integrator.getProfile();
+await integratorClient.registerCompany({ name, handle, planId });
+await integratorClient.activateCompany(companyId, transactionId);
+const plans = await integratorClient.listPlans();
+const providers = await integratorClient.listPaymentProviders();
 ```
 
-### Company Management
+### Company Configuration (company auth)
 
 ```typescript
-const { company, checkoutUrl } = await integratorClient.company.register({ name, planId, handle });
-const { apiKey } = await integratorClient.company.activate(companyId, transactionId);
-const { companies } = await integratorClient.company.list();
+const profile = await companyClient.getProfile();
+const balance = await companyClient.getBalance();
+const { webhookSecret } = await companyClient.updateWebhook({ webhookUrl });
+await companyClient.registerEncryptionKey({ keyId, publicKey });
+const key = await companyClient.getEncryptionKey();
+await companyClient.updateCustomization({ brandName, logoUrl });
+await companyClient.uploadBranding({ squareIcon, rectangularLogo });
 ```
 
 ### Conversations
 
 ```typescript
-const { conversation, deeplink } = await companyClient.conversation.create({ contactName, contactExternalId, originChannel, metadata });
-await companyClient.conversation.close(deeplinkToken);
-const keys = await companyClient.conversation.getKeys(conversationId);
-await companyClient.conversation.setOperator(conversationId, { name, avatarUrl });
-await companyClient.conversation.reportPresence(conversationId, 'TYPING');
+const { conversation, deeplink } = await companyClient.createConversation({ contact: { externalId, name?, metadata? }, operator? });
+const keys = await companyClient.getConversationKeys(conversationId);
+await companyClient.updateOperator(conversationId, { uuid?, name?, image?, gravatarHash? });
+await companyClient.reportCompanyPresence(conversationId, 'typing' | 'stopped' | 'recording');
 ```
 
 ### Messages
 
 ```typescript
-await companyClient.message.sendCompany({ conversationId, encryptedContent, encryptedKey });
-const { messages } = await companyClient.message.list(conversationId, { limit: 50 });
-await companyClient.message.markRead(conversationId, [messageId1, messageId2]);
+await companyClient.sendCompanyMessage(conversationId, envelope, contentType?, operatorUuid?, replyToId?, attachments?);
+await companyClient.reactToMessage(conversationId, messageId, emoji, operatorUuid?);
+const messages = await companyClient.listMessages(conversationId);
+await companyClient.markMessageReadByCompany(conversationId, messageId);
 ```
 
-### Company Configuration
+### Media
 
 ```typescript
-const { webhookSecret } = await companyClient.company.setWebhook({ url });
-await companyClient.company.setEncryptionKey({ publicKey });
-const { publicKey } = await companyClient.company.getEncryptionKey();
-const { balance, plan } = await companyClient.company.getBalance();
-await companyClient.company.updateCustomization({ primaryColor, logoUrl });
+const message = await companyClient.sendCompanyMedia(conversationId, { data, fileName, mimeType }, envelope, operatorUuid?, replyToId?, attachments?);
+const media = await companyClient.getMedia(mediaId);
+const { data, media } = await companyClient.downloadCompanyMedia(mediaId);
+```
+
+### Credits
+
+```typescript
+const { purchase, result } = await companyClient.purchaseCredits({
+  amountCents,
+  provider,
+});
+const purchases = await companyClient.listCreditPurchases();
 ```
 
 ### Crypto Helpers
 
 ```typescript
-import { generateOperatorKeyPair, encryptToRecipient, decryptEnvelope, encryptMediaToRecipient, decryptMediaEnvelope, loadOrCreateOperatorKey } from '@ixblix/sdk-js';
+import {
+  generateOperatorKeyPair,
+  encryptToRecipient,
+  decryptEnvelope,
+  encryptRichMessage,
+  decryptAttachments,
+  encryptMediaToRecipient,
+  encryptMediaWithAttachments,
+  decryptMediaEnvelope,
+  loadOrCreateOperatorKey,
+} from "@ixblix/sdk-js";
 
-const { publicKey, privateKey } = await generateOperatorKeyPair();
-const encrypted = encryptToRecipient({ plaintext, recipientPublicKey, senderPublicKey, attachments? });
-const plaintext = decryptEnvelope({ envelope, encryptedKey, recipientPrivateKey });
-const mediaEncrypted = encryptMediaToRecipient({ fileBuffer, recipientPublicKey, senderPublicKey });
-const mediaDecrypted = decryptMediaEnvelope({ envelope, encryptedKey, recipientPrivateKey });
+const { publicKey, privateKey, publicKeySpki, keyId } =
+  await generateOperatorKeyPair();
+// encryptToRecipient(plaintext, recipientPublicKeySpki, senderKeyId, senderPublicKeySpki)
+const envelope = encryptToRecipient(
+  plaintext,
+  recipientPublicKeySpki,
+  senderKeyId,
+  senderPublicKeySpki,
+);
+// decryptEnvelope(message, senderPrivateKey)
+const plaintext = decryptEnvelope(message, senderPrivateKey);
+// encryptRichMessage(plaintext, attachments, recipientPublicKeySpki, senderKeyId, senderPublicKeySpki)
+const richEnvelope = encryptRichMessage(
+  plaintext,
+  attachments,
+  recipientPublicKeySpki,
+  senderKeyId,
+  senderPublicKeySpki,
+);
+// decryptAttachments(message, senderPrivateKey)
+const attachments = decryptAttachments(message, senderPrivateKey);
+// encryptMediaToRecipient(fileBuffer, recipientPublicKeySpki, senderKeyId, senderPublicKeySpki)
+const mediaEnvelope = encryptMediaToRecipient(
+  fileBuffer,
+  recipientPublicKeySpki,
+  senderKeyId,
+  senderPublicKeySpki,
+);
+// encryptMediaWithAttachments(fileBuffer, attachments, recipientPublicKeySpki, senderKeyId, senderPublicKeySpki)
+const mediaWithAttachments = encryptMediaWithAttachments(
+  fileBuffer,
+  attachments,
+  recipientPublicKeySpki,
+  senderKeyId,
+  senderPublicKeySpki,
+);
+// decryptMediaEnvelope(encryptedData, message, senderPrivateKey)
+const decryptedMedia = decryptMediaEnvelope(
+  encryptedData,
+  message,
+  senderPrivateKey,
+);
 const key = await loadOrCreateOperatorKey({ path });
 ```
 
 ### Webhook Helpers
 
 ```typescript
-import { verifyWebhook, parseWebhook } from '@ixblix/sdk-js';
+import {
+  verifyWebhook,
+  parseWebhook,
+  WEBHOOK_SIGNATURE_HEADER,
+} from "@ixblix/sdk-js";
 
-const isValid = verifyWebhook(req.body, req.headers, webhookSecret);
-const event = parseWebhook(req.body);
+const signature = req.headers[WEBHOOK_SIGNATURE_HEADER];
+const parsed = verifyWebhook(req.body, webhookSecret, signature);
+const event = parsed.event;
+// Or just parse without verification:
+const parsed2 = parseWebhook(req.body);
 ```
 
 ## Security Best Practices

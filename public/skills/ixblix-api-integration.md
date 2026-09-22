@@ -19,21 +19,23 @@ curl -X POST https://api.ixblix.app/api/integrators/register \
   -H "Content-Type: application/json" \
   -d '{
     "name": "My CRM Platform",
-    "callbackUrl": "https://mycrm.example.com/ixblix/callback",
-    "contactEmail": "admin@mycrm.example.com"
+    "hostname": "mycrm.example.com",
+    "callbackUrl": "https://mycrm.example.com/ixblix/callback"
   }'
 ```
 
 **Request fields:**
 
-| Field | Required | Description |
-|-------|----------|-------------|
-| `name` | Yes | Display name of your integrator. |
-| `callbackUrl` | Yes | URL where ixblix sends credentials for verification. |
-| `contactEmail` | Yes | Contact email for the integrator. |
-| `subscriptionId` | No | Subscription identifier in the format `{paymentProvider}:{id}`. The `id` portion is opaque to the API and interpreted by the payment provider internally. Required when the assigned payment provider needs a subscription reference. |
+| Field            | Required | Description                                                                                                                                                                                                                           |
+| ---------------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `name`           | Yes      | Display name of your integrator.                                                                                                                                                                                                      |
+| `hostname`       | Yes      | Unique hostname for this integrator. Must be unique across all integrators.                                                                                                                                                           |
+| `callbackUrl`    | Yes      | URL where ixblix sends credentials for verification.                                                                                                                                                                                  |
+| `force`          | No       | If true, allows replacing an existing verified hostname registration. Defaults to false.                                                                                                                                              |
+| `subscriptionId` | No       | Subscription identifier in the format `{paymentProvider}:{id}`. The `id` portion is opaque to the API and interpreted by the payment provider internally. Required when the assigned payment provider needs a subscription reference. |
 
 **Callback Verification:** ixblix sends a POST to your `callbackUrl` with:
+
 ```json
 {
   "integratorId": "int_a1b2c3d4-e5f6-7890-abcd-ef1234567890",
@@ -51,19 +53,22 @@ curl https://api.ixblix.app/api/plans \
   -u "integratorId:accessToken"
 ```
 
-Response:
+Response (array of plans):
+
 ```json
-{
-  "plans": [
-    {
-      "id": "plan_starter",
-      "name": "Starter",
-      "monthlyPrice": 4900,
-      "includedCredits": 1000,
-      "features": ["e2ee", "webhooks", "rich-messages"]
-    }
-  ]
-}
+[
+  {
+    "id": "uuid-of-plan",
+    "name": "Starter",
+    "billingType": "PERIOD",
+    "period": "MONTHLY",
+    "priceCents": 4900,
+    "currency": "BRL",
+    "isActive": true,
+    "isPublic": true,
+    "createdAt": "2026-01-01T00:00:00.000Z"
+  }
+]
 ```
 
 ### Step 3: Register a Company
@@ -76,13 +81,32 @@ curl -X POST https://api.ixblix.app/api/companies/register \
   -H "Content-Type: application/json" \
   -d '{
     "name": "Acme Corporation",
-    "planId": "plan_starter",
     "handle": "acme",
-    "website": "https://acme.example.com"
+    "planId": "uuid-of-plan"
   }'
 ```
 
-Response includes `checkoutUrl` — redirect the company owner there to complete payment.
+Response includes `company` and `payment` with a `checkoutUrl` — redirect the company owner there to complete payment.
+
+```json
+{
+  "company": {
+    "id": "cmp_xxxx",
+    "name": "Acme Corporation",
+    "handle": "acme",
+    "status": "PENDING_PAYMENT"
+  },
+  "payment": {
+    "transactionId": "company_cmp_xxxx-txn",
+    "provider": "efi",
+    "amountCents": 4900,
+    "currency": "BRL",
+    "confirmationUrl": "/api/companies/cmp_xxxx/activate/company_cmp_xxxx-txn",
+    "status": "PENDING",
+    "checkoutUrl": "https://api.ixblix.app/checkout/company_cmp_xxxx-txn"
+  }
+}
+```
 
 ### Step 4: Activate the Company
 
@@ -94,10 +118,11 @@ curl -X POST https://api.ixblix.app/api/companies/{companyId}/activate/{transact
 ```
 
 Response:
+
 ```json
 {
-  "company": { "id": "cmp_xxxx", "status": "active" },
-  "apiKey": "smci_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+  "apiKey": "smci_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+  "status": "ACTIVE"
 }
 ```
 
@@ -111,7 +136,7 @@ Set your webhook endpoint to receive events:
 curl -X PUT https://api.ixblix.app/api/companies/webhook \
   -H "X-API-Key: smci_xxxx" \
   -H "Content-Type: application/json" \
-  -d '{ "url": "https://mycrm.example.com/ixblix/webhooks" }'
+  -d '{ "webhookUrl": "https://mycrm.example.com/ixblix/webhooks" }'
 ```
 
 Response includes `webhookSecret` for verifying signatures. Store it securely.
@@ -129,9 +154,12 @@ curl -X PUT https://api.ixblix.app/api/companies/encryption-key \
   -H "X-API-Key: smci_xxxx" \
   -H "Content-Type: application/json" \
   -d '{
-    "publicKey": "-----BEGIN PUBLIC KEY-----\nMIIBIjANBgkqhki..."
+    "keyId": "operator-key-1",
+    "publicKey": "MIIBIjANBgkqhki..."
   }'
 ```
+
+> **Note:** The `publicKey` must be base64-encoded SPKI DER format (not PEM). The `keyId` is a stable identifier you choose to locate the matching private key later.
 
 ### Step 7: Create a Conversation
 
@@ -140,18 +168,32 @@ curl -X POST https://api.ixblix.app/api/conversations \
   -H "X-API-Key: smci_xxxx" \
   -H "Content-Type: application/json" \
   -d '{
-    "contactName": "Jane Doe",
-    "contactExternalId": "crm-contact-123",
-    "originChannel": "whatsapp",
-    "metadata": { "ticketId": "TK-456" }
+    "contact": {
+      "externalId": "crm-contact-123",
+      "name": "Jane Doe",
+      "metadata": { "ticketId": "TK-456" }
+    }
   }'
 ```
 
 Response:
+
 ```json
 {
-  "conversation": { "id": "conv_xxxx", "token": "dl_xxxx" },
-  "deeplink": "https://api.ixblix.app/c/dl_xxxx"
+  "conversation": {
+    "id": "conv_xxxx",
+    "token": "dl_xxxx",
+    "status": "ACTIVE",
+    "keyStatus": "AWAITING_CUSTOMER"
+  },
+  "contact": {
+    "id": "contact_xxxx",
+    "externalId": "crm-contact-123",
+    "name": "Jane Doe",
+    "consentStatus": "PENDING"
+  },
+  "deeplink": "https://api.ixblix.app/c/dl_xxxx",
+  "company": { "id": "cmp_xxxx", "name": "Acme Corporation" }
 }
 ```
 
@@ -163,12 +205,10 @@ When the customer opens the deeplink, you receive a `CUSTOMER_JOINED` webhook:
 
 ```json
 {
-  "type": "CUSTOMER_JOINED",
-  "eventId": "evt_xxxx",
-  "payload": {
-    "conversationId": "conv_xxxx",
-    "customerPublicKey": "-----BEGIN PUBLIC KEY-----\nMIIBIjAN..."
-  }
+  "event": "CUSTOMER_JOINED",
+  "companyId": "cmp_xxxx",
+  "conversationId": "conv_xxxx",
+  "customerPublicKey": "MIIBIjANBgkqhki..."
 }
 ```
 
@@ -186,12 +226,17 @@ const plaintext = 'Hello from Acme Corp!';
 const aesKey = crypto.randomBytes(32);
 const iv = crypto.randomBytes(12);
 const cipher = crypto.createCipheriv('aes-256-gcm', aesKey, iv);
-const encrypted = Buffer.concat([cipher.update(plaintext, 'utf8'), cipher.final()]);
+const ciphertext = Buffer.concat([cipher.update(plaintext, 'utf8'), cipher.final()]);
 const authTag = cipher.getAuthTag();
-const wrappedKey = crypto.publicEncrypt({key: customerPublicKey, padding: crypto.constants.RSA_PKCS1_OAEP_PADDING, oaepHash: 'sha256'}, aesKey);
+const encryptedKey = crypto.publicEncrypt({key: customerPublicKey, padding: crypto.constants.RSA_PKCS1_OAEP_PADDING, oaepHash: 'sha256'}, aesKey);
+const selfEncryptedKey = crypto.publicEncrypt({key: operatorPublicKey, padding: crypto.constants.RSA_PKCS1_OAEP_PADDING, oaepHash: 'sha256'}, aesKey);
 console.log(JSON.stringify({
-  content: Buffer.concat([iv, authTag, encrypted]).toString('base64'),
-  key: wrappedKey.toString('base64')
+  content: ciphertext.toString('base64'),
+  iv: iv.toString('base64'),
+  authTag: authTag.toString('base64'),
+  encryptedKey: encryptedKey.toString('base64'),
+  selfEncryptedKey: selfEncryptedKey.toString('base64'),
+  keyId: 'operator-key-1'
 }));
 "
 
@@ -201,8 +246,13 @@ curl -X POST https://api.ixblix.app/api/messages/company \
   -H "Content-Type: application/json" \
   -d '{
     "conversationId": "conv_xxxx",
-    "encryptedContent": "base64-encoded-ciphertext...",
-    "encryptedKey": "base64-encoded-wrapped-key..."
+    "content": "base64-AES-GCM-ciphertext",
+    "contentType": "text",
+    "iv": "base64-iv",
+    "authTag": "base64-auth-tag",
+    "encryptedKey": "base64-rsa-wrapped-aes-key-to-customer",
+    "selfEncryptedKey": "base64-rsa-wrapped-aes-key-to-self",
+    "keyId": "operator-key-1"
   }'
 ```
 
@@ -212,28 +262,25 @@ When the customer replies, you receive a `MESSAGE_RECEIVED` webhook:
 
 ```json
 {
-  "type": "MESSAGE_RECEIVED",
-  "eventId": "evt_xxxx",
-  "payload": {
-    "conversationId": "conv_xxxx",
-    "messageId": "msg_xxxx",
-    "encryptedContent": "base64...",
-    "encryptedKey": "base64..."
-  }
+  "event": "MESSAGE_RECEIVED",
+  "companyId": "cmp_xxxx",
+  "conversationId": "conv_xxxx",
+  "messageId": "msg_xxxx",
+  "sentAt": "2026-09-01T12:11:00.000Z"
 }
 ```
 
-Decrypt using your operator private key:
+Retrieve the full message (including encrypted content and envelope) via the messages list endpoint, then decrypt using your operator private key:
 
 ```bash
 node -e "
 const crypto = require('crypto');
-const encryptedKey = Buffer.from('base64-wrapped-key', 'base64');
+// These come from the message object returned by GET /api/messages/{conversationId}
+const encryptedKey = Buffer.from('base64-rsa-wrapped-aes-key', 'base64');
 const aesKey = crypto.privateDecrypt({key: operatorPrivateKey, padding: crypto.constants.RSA_PKCS1_OAEP_PADDING, oaepHash: 'sha256'}, encryptedKey);
-const data = Buffer.from('base64-content', 'base64');
-const iv = data.slice(0, 12);
-const authTag = data.slice(12, 28);
-const ciphertext = data.slice(28);
+const iv = Buffer.from('base64-iv', 'base64');
+const authTag = Buffer.from('base64-auth-tag', 'base64');
+const ciphertext = Buffer.from('base64-content', 'base64');
 const decipher = crypto.createDecipheriv('aes-256-gcm', aesKey, iv);
 decipher.setAuthTag(authTag);
 const plaintext = Buffer.concat([decipher.update(ciphertext), decipher.final()]);
@@ -250,27 +297,49 @@ node -e "
 const crypto = require('crypto');
 const signature = req.headers['x-ixblix-signature'];
 const expected = crypto.createHmac('sha256', webhookSecret).update(JSON.stringify(req.body)).digest('hex');
-const isValid = crypto.timingSafeEqual(Buffer.from(signature), Buffer.from(expected));
+const isValid = crypto.timingSafeEqual(Buffer.from(signature, 'hex'), Buffer.from(expected, 'hex'));
 console.log('Valid:', isValid);
 "
 ```
 
 ## Webhook Event Types
 
-| Event | When | Key Payload Fields |
-|---|---|---|
-| `MESSAGE_RECEIVED` | Customer sends a message | `conversationId`, `messageId`, `encryptedContent`, `encryptedKey` |
-| `MESSAGE_READ` | Customer reads company messages | `conversationId`, `messageIds` |
-| `CUSTOMER_JOINED` | Customer opens chat and registers key | `conversationId`, `customerPublicKey` |
-| `CONVERSATION_CLOSED` | Conversation is closed | `conversationId`, `closedBy` |
-| `TYPING` | Customer starts typing | `conversationId` |
-| `RECORDING` | Customer records audio | `conversationId` |
-| `CHAT_CLOSED` | Customer closes chat window | `conversationId` |
-| `BALANCE_LOW` | Company credit balance is low | `companyId`, `balance`, `threshold` |
+All webhook events use a flat JSON structure with an `event` field indicating the type. They are signed with HMAC-SHA256 via the `X-Ixblix-Signature` header.
+
+| Event                 | When                                  | Key Fields                                  |
+| --------------------- | ------------------------------------- | ------------------------------------------- |
+| `MESSAGE_RECEIVED`    | Contact sends a message               | `conversationId`, `messageId`, `replyToId?` |
+| `MESSAGE_READ`        | Customer reads a company message      | `conversationId`, `messageId`, `readAt`     |
+| `CUSTOMER_JOINED`     | Customer opens chat and registers key | `conversationId`, `customerPublicKey`       |
+| `CONVERSATION_CLOSED` | Conversation is closed                | `conversationId`                            |
+| `TYPING`              | Customer starts typing                | `conversationId`, `type: "typing"`          |
+| `STOPPED_TYPING`      | Customer stops typing                 | `conversationId`, `type: "stopped"`         |
+| `RECORDING`           | Customer records audio                | `conversationId`, `type: "recording"`       |
+| `CHAT_CLOSED`         | Customer closes chat window           | `conversationId`, `type: "chat_closed"`     |
+| `BALANCE_LOW`         | Company credit balance is low         | `companyId`, `balanceCents`                 |
+| `COMPANY_ACTIVATED`   | Company activated after payment       | `companyId`, `transactionId`, `apiKey`      |
 
 ## Rich Messages
 
-Send interactive buttons (quick replies, URLs, copy, Pix, vCard, location):
+Operators may attach structured resources to a message: inline buttons, vCard, location and link preview. These are sent in the encrypted `attachments` field as a JSON string. The operator encrypts the attachments JSON using the same AES key as the message content.
+
+Plaintext `attachments` format (send one or more of `buttons`, `vcard`):
+
+```json
+{
+  "buttons": [
+    { "type": "reply", "label": "Yes" },
+    { "type": "reply", "label": "No" },
+    {
+      "type": "url",
+      "label": "Track order",
+      "url": "https://acme.example.com/track/123"
+    }
+  ]
+}
+```
+
+Send as a text message with encrypted attachments:
 
 ```bash
 curl -X POST https://api.ixblix.app/api/messages/company \
@@ -278,52 +347,54 @@ curl -X POST https://api.ixblix.app/api/messages/company \
   -H "Content-Type: application/json" \
   -d '{
     "conversationId": "conv_xxxx",
-    "encryptedContent": "base64...",
-    "encryptedKey": "base64...",
-    "attachments": [
-      { "type": "reply", "label": "Yes" },
-      { "type": "reply", "label": "No" },
-      { "type": "url", "label": "Track order", "url": "https://acme.example.com/track/123" }
-    ]
+    "content": "base64-AES-GCM-ciphertext",
+    "contentType": "text",
+    "iv": "base64-iv",
+    "authTag": "base64-auth-tag",
+    "encryptedKey": "base64-rsa-wrapped-aes-key",
+    "selfEncryptedKey": "base64-rsa-wrapped-aes-key-to-self",
+    "keyId": "operator-key-1",
+    "attachments": "base64-encrypted-attachments-blob"
   }'
 ```
 
+**Rendering rules:**
+
+- ≤ 3 buttons: rendered inline
+- \> 3 buttons: rendered in modal
+- Only `reply` buttons send messages back to operator
+
 ## Media Upload
 
-Upload encrypted media files:
+Upload encrypted media files as multipart/form-data. The file bytes must already be encrypted by the client; the envelope fields describe how to decrypt them.
 
 ```bash
 # Upload encrypted file
 curl -X POST https://api.ixblix.app/api/media/company \
   -H "X-API-Key: smci_xxxx" \
-  -H "Content-Type: application/octet-stream" \
-  -H "X-Media-Type: document" \
-  -H "X-Media-Filename: invoice.pdf" \
-  -H "X-Media-Mime: application/pdf" \
-  --data-binary @encrypted_file.bin
-
-# Send message with media reference
-curl -X POST https://api.ixblix.app/api/messages/company \
-  -H "X-API-Key: smci_xxxx" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "conversationId": "conv_xxxx",
-    "encryptedContent": "base64...",
-    "encryptedKey": "base64...",
-    "mediaId": "med_xxxx"
-  }'
+  -F "conversationId=conv_xxxx" \
+  -F "file=@encrypted_file.bin" \
+  -F "iv=base64-iv" \
+  -F "authTag=base64-auth-tag" \
+  -F "encryptedKey=base64-rsa-wrapped-aes-key" \
+  -F "selfEncryptedKey=base64-rsa-wrapped-aes-key-to-self" \
+  -F "keyId=operator-key-1"
 ```
+
+The response is a `Message` object with a `mediaId` referencing the uploaded file.
 
 ## Presence & Typing
 
-Report operator presence:
+Report operator presence (typing, recording, or stopped):
 
 ```bash
 curl -X POST https://api.ixblix.app/api/conversations/conv_xxxx/presence \
   -H "X-API-Key: smci_xxxx" \
   -H "Content-Type: application/json" \
-  -d '{ "type": "TYPING" }'
+  -d '{ "type": "typing" }'
 ```
+
+Accepted `type` values: `typing`, `recording`, `stopped`.
 
 ## Key Transfer (Cross-Device)
 
@@ -334,38 +405,43 @@ Allow customers to transfer encryption keys between devices:
 curl -X POST https://api.ixblix.app/api/key-transfer \
   -H "Content-Type: application/json" \
   -d '{
-    "conversationToken": "dl_xxxx",
-    "encryptedPayload": "base64...",
-    "salt": "base64...",
-    "iv": "base64...",
-    "authTag": "base64..."
+    "ciphertext": "base64-AES-256-GCM-ciphertext-of-keypair",
+    "iv": "base64-iv",
+    "salt": "base64-pbkdf2-salt",
+    "kdf": { "alg": "PBKDF2-SHA256", "iterations": 200000 },
+    "publicKeySpki": "base64-SPKI-public-key"
   }'
+
+# Response: { "transferId": "uuid", "expiresAt": "..." }
 
 # Retrieve transfer (target device)
 curl https://api.ixblix.app/api/key-transfer/{transferId}
 
 # Confirm transfer
-curl -X POST https://api.ixblix.app/api/key-transfer/{transferId}/confirm
+curl -X POST https://api.ixblix.app/api/key-transfer/{transferId}/confirm \
+  -H "Content-Type: application/json" \
+  -d '{ "publicKeySpki": "base64-SPKI-public-key" }'
 ```
 
 ## Authentication Methods
 
-| Method | Who | Header | Format |
-|---|---|---|---|
-| HTTP Basic Auth | Integrators | `Authorization` | `Basic base64(integratorId:accessToken)` |
-| API Key | Companies | `X-API-Key` | `smci_xxxxxxxxxxxx` |
-| None | Customers/Public | — | Public endpoints use conversation tokens |
+| Method          | Who              | Header          | Format                                   |
+| --------------- | ---------------- | --------------- | ---------------------------------------- |
+| HTTP Basic Auth | Integrators      | `Authorization` | `Basic base64(integratorId:accessToken)` |
+| API Key         | Companies        | `X-API-Key`     | `smci_xxxxxxxxxxxx`                      |
+| None            | Customers/Public | —               | Public endpoints use conversation tokens |
 
 ## Error Handling
 
 All errors return:
+
 ```json
 {
-  "error": {
-    "code": "VALIDATION_ERROR",
-    "message": "The 'contactName' field is required.",
-    "details": [{ "field": "contactName", "message": "Must be a non-empty string" }]
-  }
+  "error": "The 'contact.externalId' field is required.",
+  "code": "VALIDATION_ERROR",
+  "errors": [
+    { "path": "contact.externalId", "message": "Must be a non-empty string" }
+  ]
 }
 ```
 
