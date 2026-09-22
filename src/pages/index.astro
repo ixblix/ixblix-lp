@@ -11,13 +11,15 @@ const locale = 'en';
     // Auto-detect browser language and redirect on first visit
     (function() {
       var stored = localStorage.getItem('ixblix-locale');
-      if (stored) return; // User already chose a language
-      
       var lang = (navigator.language || 'en').toLowerCase();
-      if (lang.startsWith('pt')) {
-        window.location.replace('/pt');
-      } else if (lang.startsWith('es')) {
-        window.location.replace('/es');
+      var detected = lang.startsWith('pt') ? 'pt' : lang.startsWith('es') ? 'es' : 'en';
+      
+      // If no stored preference, use detected language
+      var target = stored || detected;
+      
+      // Redirect if not on the correct language version
+      if (target !== 'en') {
+        window.location.replace('/' + target);
       }
     })();
   </script>
