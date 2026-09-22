@@ -86,6 +86,7 @@ function homePath(loc: Locale): string {
             <a
               href={l === 'en' ? `/docs/${currentPath}` : `/${l}/docs/${currentPath}`}
               class={`sidebar-locale-btn ${locale === l ? 'active' : ''}`}
+              data-lang={l}
             >
               {localeNames[l]}
             </a>
@@ -140,6 +141,13 @@ function homePath(loc: Locale): string {
         window.location.replace(newPath);
       }
     })();
+
+    // Set language preference when user clicks a language switcher
+    document.querySelectorAll('[data-lang]').forEach(function(el) {
+      el.addEventListener('click', function() {
+        localStorage.setItem('ixblix-locale', el.getAttribute('data-lang'));
+      });
+    });
 
     const toggle = document.getElementById('menu-toggle');
     const sidebar = document.getElementById('sidebar');

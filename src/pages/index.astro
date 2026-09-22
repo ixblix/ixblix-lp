@@ -8,20 +8,29 @@ const locale = 'en';
 
 <BaseLayout title="ixblix — Developer Documentation" locale={locale}>
   <script is:inline>
-    // Auto-detect browser language and redirect on first visit
+    // Auto-detect browser language and redirect on first visit only
     (function() {
       var stored = localStorage.getItem('ixblix-locale');
+      
+      // If user has explicitly chosen a language, respect that choice
+      if (stored) return;
+      
+      // Only auto-detect on first visit (no stored preference)
       var lang = (navigator.language || 'en').toLowerCase();
       var detected = lang.startsWith('pt') ? 'pt' : lang.startsWith('es') ? 'es' : 'en';
       
-      // If no stored preference, use detected language
-      var target = stored || detected;
-      
-      // Redirect if not on the correct language version
-      if (target !== 'en') {
-        window.location.replace('/' + target);
+      // Redirect if detected language is not English
+      if (detected !== 'en') {
+        window.location.replace('/' + detected);
       }
     })();
+
+    // Set language preference when user clicks a language switcher
+    document.querySelectorAll('[data-lang]').forEach(function(el) {
+      el.addEventListener('click', function() {
+        localStorage.setItem('ixblix-locale', el.getAttribute('data-lang'));
+      });
+    });
   </script>
   <div class="home-page">
     <div class="home-lang-bar">
@@ -30,6 +39,7 @@ const locale = 'en';
           <a
             href={l === 'en' ? '/' : `/${l}`}
             class={`home-lang-btn ${locale === l ? 'active' : ''}`}
+            data-lang={l}
           >
             {localeNames[l]}
           </a>
