@@ -32,7 +32,7 @@ const locale: Locale = 'pt';
   <CodeBlock language="bash" code={`curl https://api.ixblix.app/api/media/{mediaId}/content \\
   -H "X-API-Key: smci_xxxx"`} title="cURL" />
 
-  <p>Metadados (envelope + informações do arquivo) estão disponíveis em <code>GET /api/media/{mediaId}</code>.</p>
+  <p>Metadados (envelope + informações do arquivo) estão disponíveis em <code>GET /api/media/{"{mediaId}"}</code>.</p>
 
   <h2>Tipos de Conteúdo</h2>
   <table>
@@ -48,7 +48,7 @@ const locale: Locale = 'pt';
   </table>
 
   <h2>Recebendo Mídia</h2>
-  <p>Quando receber um webhook <code>MESSAGE_RECEIVED</code> para uma mensagem de mídia, busque os detalhes com <code>GET /api/messages/{conversationId}</code>. A resposta inclui o <code>mediaId</code> e campos do envelope. Baixe os bytes criptografados via <code>GET /api/media/{mediaId}/content</code> e descriptografe localmente.</p>
+  <p>Quando receber um webhook <code>MESSAGE_RECEIVED</code> para uma mensagem de mídia, busque os detalhes com <code>GET /api/messages/{"{conversationId}"}</code>. A resposta inclui o <code>mediaId</code> e campos do envelope. Baixe os bytes criptografados via <code>GET /api/media/{"{mediaId}"}/content</code> e descriptografe localmente.</p>
 
   <h2>Armazenamento</h2>
   <p>Arquivos de mídia são armazenados criptografados em armazenamento de objetos compatível com S3. O backend armazena apenas ciphertext — nunca vê texto plano. O acesso é controlado via chave de API da empresa ou token da conversa.</p>
