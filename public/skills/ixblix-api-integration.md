@@ -47,7 +47,8 @@ Your endpoint must respond with `200 OK` to confirm receipt. Store these credent
 ### Step 2: List Available Plans
 
 ```bash
-curl https://api.ixblix.app/api/plans
+curl https://api.ixblix.app/api/plans \
+  -u "integratorId:accessToken"
 ```
 
 Response:
