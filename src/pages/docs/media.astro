@@ -16,36 +16,23 @@ const locale: Locale = 'en';
   <p>Media messages follow the same end-to-end encryption scheme as text messages. The media file is encrypted with a per-message AES-256-GCM key, and the key is wrapped to both the recipient's and sender's RSA public keys.</p>
 
   <h2>Uploading Media</h2>
-  <p>Upload media to the storage service first, then reference it in a message:</p>
-  <CodeBlock language="bash" code={`curl -X POST https://api.ixblix.app/api/media/upload \\
+  <p>Upload encrypted media as multipart/form-data. The file bytes must already be encrypted by the client; the envelope fields describe how to decrypt them. The response is a <code>Message</code> object with a <code>mediaId</code> referencing the uploaded file.</p>
+  <CodeBlock language="bash" code={`curl -X POST https://api.ixblix.app/api/media/company \\
   -H "X-API-Key: smci_xxxx" \\
-  -F "file=@photo.jpg" \\
-  -F "conversationId=conv_xxxx"`} title="cURL" />
+  -F "conversationId=conv_xxxx" \\
+  -F "file=@encrypted_photo.bin" \\
+  -F "iv=base64-iv" \\
+  -F "authTag=base64-auth-tag" \\
+  -F "encryptedKey=base64-rsa-wrapped-aes-key" \\
+  -F "selfEncryptedKey=base64-rsa-wrapped-aes-key-to-self" \\
+  -F "keyId=operator-key-1"`} title="cURL" />
 
-  <p>Response:</p>
-  <CodeBlock language="json" code={`{
-  "mediaId": "med_xxxx",
-  "mimeType": "image/jpeg",
-  "sizeBytes": 245000,
-  "url": "https://storage.ixblix.app/media/med_xxxx"
-}`} title="Response" />
+  <h2>Downloading Media</h2>
+  <p>Fetch the raw encrypted bytes and envelope headers:</p>
+  <CodeBlock language="bash" code={`curl https://api.ixblix.app/api/media/{mediaId}/content \\
+  -H "X-API-Key: smci_xxxx"`} title="cURL" />
 
-  <h2>Sending a Media Message</h2>
-  <p>Include the <code>mediaId</code> in your message request. The <code>content</code> field carries an encrypted caption (or empty string if no caption).</p>
-  <CodeBlock language="bash" code={`curl -X POST https://api.ixblix.app/api/messages/company \\
-  -H "X-API-Key: smci_xxxx" \\
-  -H "Content-Type: application/json" \\
-  -d '{
-    "conversationId": "conv_xxxx",
-    "content": "<encrypted caption>",
-    "contentType": "image",
-    "mediaId": "med_xxxx",
-    "iv": "...",
-    "authTag": "...",
-    "encryptedKey": "...",
-    "selfEncryptedKey": "...",
-    "keyId": "..."
-  }'`} title="cURL" />
+  <p>Metadata (envelope + file info) is available at <code>GET /api/media/{mediaId}</code>.</p>
 
   <h2>Content Types</h2>
   <table>
@@ -61,10 +48,10 @@ const locale: Locale = 'en';
   </table>
 
   <h2>Receiving Media</h2>
-  <p>When you receive a <code>MESSAGE_RECEIVED</code> webhook for a media message, fetch the message details with <code>GET /api/messages/{"{conversationId}"}</code>. The response includes the <code>mediaId</code> and a download URL.</p>
+  <p>When you receive a <code>MESSAGE_RECEIVED</code> webhook for a media message, fetch the message details with <code>GET /api/messages/{conversationId}</code>. The response includes the <code>mediaId</code> and envelope fields. Download the encrypted bytes via <code>GET /api/media/{mediaId}/content</code> and decrypt locally.</p>
 
   <h2>Storage</h2>
-  <p>Media files are stored in an S3-compatible object storage. The backend manages upload URLs and access control. Files are served through signed URLs that expire after a configurable duration.</p>
+  <p>Media files are stored encrypted in an S3-compatible object storage. The backend only stores ciphertext — it never sees the plaintext. Access is controlled via the company API key or conversation token.</p>
 
   <PageNav
     prev={{ titleKey: 'nav.richMessages', path: 'rich-messages' }}

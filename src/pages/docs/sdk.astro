@@ -16,58 +16,55 @@ const locale: Locale = 'en';
   <CodeBlock language="bash" code="npm install @ixblix/sdk-js" title="npm" />
 
   <h2>Client Setup</h2>
-  <CodeBlock language="typescript" code={`import { IxblixClient } from '@ixblix/sdk-js';
+  <CodeBlock language="typescript" code={`import { IxblixClient, loadOrCreateOperatorKey } from '@ixblix/sdk-js';
+
+const operatorKey = await loadOrCreateOperatorKey({ path: './keys/operator.json' });
 
 // Integrator-scoped client
 const integratorClient = new IxblixClient({
   baseUrl: 'https://api.ixblix.app',
   integratorId: 'int_xxxx',
-  accessToken: 'ixblix_integrator_token_xxxx',
+  integratorAccessToken: 'ixblix_integrator_token_xxxx',
 });
 
 // Company-scoped client
 const companyClient = new IxblixClient({
   baseUrl: 'https://api.ixblix.app',
   apiKey: 'smci_xxxx',
+  operatorKey,
 });`} title="TypeScript" />
 
   <h2>Integrator Methods</h2>
-  <CodeBlock language="typescript" code={`// Register
-await client.integrator.register({ name, callbackUrl, contactEmail });
-
-// Profile
-const profile = await client.integrator.getProfile();
-
-// Plans
-const { plans } = await client.plans.list();
+  <CodeBlock language="typescript" code={`// Plans
+const plans = await integratorClient.listPlans();
 
 // Company registration
-const { company, checkoutUrl } = await client.company.register({ name, planId, handle });
+const { company, payment } = await integratorClient.registerCompany({ name, handle, planId });
 
 // Company activation
-const { apiKey } = await client.company.activate(companyId, transactionId);`} title="TypeScript" />
+const { apiKey } = await integratorClient.activateCompany(company.id, payment.transactionId);`} title="TypeScript" />
 
   <h2>Company Methods</h2>
   <CodeBlock language="typescript" code={`// Webhook
-const { webhookSecret } = await client.company.setWebhook({ url });
+const { webhookSecret } = await companyClient.updateWebhook({ webhookUrl });
 
 // Encryption key
-await client.company.setEncryptionKey({ publicKey });
+await companyClient.registerEncryptionKey({ keyId, publicKey });
 
 // Conversations
-const { conversation, deeplink } = await client.conversation.create({
+const { conversation, deeplink } = await companyClient.createConversation({
   contact: { externalId, name, metadata },
 });
 
 // Messages
-await client.message.sendCompany({
-  conversationId,
-  encryptedContent: encrypted.content,
-  encryptedKey: encrypted.key,
-});
+const envelope = encryptToRecipient('Hello!', customerPublicKeySpki, operatorKey.keyId, operatorKey.publicKeySpki);
+await companyClient.sendCompanyMessage(conversationId, envelope);
 
 // Read receipts
-await client.message.markRead(conversationId, messageId);`} title="TypeScript" />
+await companyClient.markMessageReadByCompany(conversationId, messageId);
+
+// Presence
+await companyClient.reportCompanyPresence(conversationId, 'typing');`} title="TypeScript" />
 
   <h2>Crypto Helpers</h2>
   <CodeBlock language="typescript" code={`import {
@@ -75,6 +72,10 @@ await client.message.markRead(conversationId, messageId);`} title="TypeScript" /
   loadOrCreateOperatorKey,
   encryptToRecipient,
   decryptEnvelope,
+  encryptRichMessage,
+  decryptAttachments,
+  encryptMediaToRecipient,
+  decryptMediaEnvelope,
 } from '@ixblix/sdk-js';
 
 // Generate or load keypair
@@ -82,18 +83,29 @@ const operatorKey = await loadOrCreateOperatorKey({
   path: './keys/operator.json',
 });
 
-// Encrypt
-const encrypted = encryptToRecipient({
-  plaintext: 'Hello!',
-  recipientPublicKey: customerPublicKey,
-  senderPublicKey: operatorKey.publicKey,
-});
+// Encrypt text
+const envelope = encryptToRecipient(
+  'Hello!',
+  customerPublicKeySpki,
+  operatorKey.keyId,
+  operatorKey.publicKeySpki,
+);
 
-// Decrypt
-const plaintext = decryptEnvelope({
-  envelope: message,
-  privateKey: operatorKey.privateKey,
-});`} title="TypeScript" />
+// Decrypt text message
+const plaintext = decryptEnvelope(message, operatorKey.privateKey);
+
+// Encrypt rich message (buttons, vcard, location)
+const richEnvelope = encryptRichMessage(
+  'Confirm your order:',
+  { buttons: [{ type: 'reply', label: 'Yes' }] },
+  customerPublicKeySpki,
+  operatorKey.keyId,
+  operatorKey.publicKeySpki,
+);
+
+// Encrypt/decrypt media
+const mediaEnvelope = encryptMediaToRecipient(fileBuffer, customerPublicKeySpki, operatorKey.keyId, operatorKey.publicKeySpki);
+const decrypted = decryptMediaEnvelope(encryptedData, message, operatorKey.privateKey);`} title="TypeScript" />
 
   <h2>Webhook Verification</h2>
   <CodeBlock language="typescript" code={`import { verifyWebhook, WEBHOOK_SIGNATURE_HEADER } from '@ixblix/sdk-js';

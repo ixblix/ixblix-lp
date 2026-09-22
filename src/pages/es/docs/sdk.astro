@@ -16,58 +16,55 @@ const locale: Locale = 'es';
   <CodeBlock language="bash" code="npm install @ixblix/sdk-js" title="npm" />
 
   <h2>Configuración del Cliente</h2>
-  <CodeBlock language="typescript" code={`import { IxblixClient } from '@ixblix/sdk-js';
+  <CodeBlock language="typescript" code={`import { IxblixClient, loadOrCreateOperatorKey } from '@ixblix/sdk-js';
+
+const operatorKey = await loadOrCreateOperatorKey({ path: './keys/operator.json' });
 
 // Cliente en el ámbito del integrador
 const integratorClient = new IxblixClient({
   baseUrl: 'https://api.ixblix.app',
   integratorId: 'int_xxxx',
-  accessToken: 'ixblix_integrator_token_xxxx',
+  integratorAccessToken: 'ixblix_integrator_token_xxxx',
 });
 
 // Cliente en el ámbito de la empresa
 const companyClient = new IxblixClient({
   baseUrl: 'https://api.ixblix.app',
   apiKey: 'smci_xxxx',
+  operatorKey,
 });`} title="TypeScript" />
 
   <h2>Métodos del Integrador</h2>
-  <CodeBlock language="typescript" code={`// Registrar
-await client.integrator.register({ name, callbackUrl, contactEmail });
-
-// Perfil
-const profile = await client.integrator.getProfile();
-
-// Planes
-const { plans } = await client.plans.list();
+  <CodeBlock language="typescript" code={`// Planes
+const plans = await integratorClient.listPlans();
 
 // Registro de empresa
-const { company, checkoutUrl } = await client.company.register({ name, planId, handle });
+const { company, payment } = await integratorClient.registerCompany({ name, handle, planId });
 
 // Activación de empresa
-const { apiKey } = await client.company.activate(companyId, transactionId);`} title="TypeScript" />
+const { apiKey } = await integratorClient.activateCompany(company.id, payment.transactionId);`} title="TypeScript" />
 
   <h2>Métodos de la Empresa</h2>
   <CodeBlock language="typescript" code={`// Webhook
-const { webhookSecret } = await client.company.setWebhook({ url });
+const { webhookSecret } = await companyClient.updateWebhook({ webhookUrl });
 
 // Clave de cifrado
-await client.company.setEncryptionKey({ publicKey });
+await companyClient.registerEncryptionKey({ keyId, publicKey });
 
 // Conversaciones
-const { conversation, deeplink } = await client.conversation.create({
+const { conversation, deeplink } = await companyClient.createConversation({
   contact: { externalId, name, metadata },
 });
 
 // Mensajes
-await client.message.sendCompany({
-  conversationId,
-  encryptedContent: encrypted.content,
-  encryptedKey: encrypted.key,
-});
+const envelope = encryptToRecipient('¡Hola!', customerPublicKeySpki, operatorKey.keyId, operatorKey.publicKeySpki);
+await companyClient.sendCompanyMessage(conversationId, envelope);
 
 // Acuses de lectura
-await client.message.markRead(conversationId, messageId);`} title="TypeScript" />
+await companyClient.markMessageReadByCompany(conversationId, messageId);
+
+// Presencia
+await companyClient.reportCompanyPresence(conversationId, 'typing');`} title="TypeScript" />
 
   <h2>Auxiliares de Criptografía</h2>
   <CodeBlock language="typescript" code={`import {
@@ -75,6 +72,10 @@ await client.message.markRead(conversationId, messageId);`} title="TypeScript" /
   loadOrCreateOperatorKey,
   encryptToRecipient,
   decryptEnvelope,
+  encryptRichMessage,
+  decryptAttachments,
+  encryptMediaToRecipient,
+  decryptMediaEnvelope,
 } from '@ixblix/sdk-js';
 
 // Generar o cargar par de claves
@@ -82,18 +83,29 @@ const operatorKey = await loadOrCreateOperatorKey({
   path: './keys/operator.json',
 });
 
-// Cifrar
-const encrypted = encryptToRecipient({
-  plaintext: '¡Hola!',
-  recipientPublicKey: customerPublicKey,
-  senderPublicKey: operatorKey.publicKey,
-});
+// Cifrar texto
+const envelope = encryptToRecipient(
+  '¡Hola!',
+  customerPublicKeySpki,
+  operatorKey.keyId,
+  operatorKey.publicKeySpki,
+);
 
-// Descifrar
-const plaintext = decryptEnvelope({
-  envelope: message,
-  privateKey: operatorKey.privateKey,
-});`} title="TypeScript" />
+// Descifrar mensaje de texto
+const plaintext = decryptEnvelope(message, operatorKey.privateKey);
+
+// Cifrar mensaje rico (botones, vcard, ubicación)
+const richEnvelope = encryptRichMessage(
+  'Confirme su pedido:',
+  { buttons: [{ type: 'reply', label: 'Sí' }] },
+  customerPublicKeySpki,
+  operatorKey.keyId,
+  operatorKey.publicKeySpki,
+);
+
+// Cifrar/descifrar medios
+const mediaEnvelope = encryptMediaToRecipient(fileBuffer, customerPublicKeySpki, operatorKey.keyId, operatorKey.publicKeySpki);
+const decrypted = decryptMediaEnvelope(encryptedData, message, operatorKey.privateKey);`} title="TypeScript" />
 
   <h2>Verificación de Webhooks</h2>
   <CodeBlock language="typescript" code={`import { verifyWebhook, WEBHOOK_SIGNATURE_HEADER } from '@ixblix/sdk-js';

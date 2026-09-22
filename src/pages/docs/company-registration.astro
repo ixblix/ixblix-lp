@@ -16,19 +16,20 @@ const locale: Locale = 'en';
   <CodeBlock language="bash" code={`curl https://api.ixblix.app/api/plans \\
   -u "int_xxxx:ixblix_integrator_token_xxxx"`} title="cURL" />
 
-  <p>Response:</p>
-  <CodeBlock language="json" code={`{
-  "plans": [
-    {
-      "id": "plan_starter",
-      "name": "Starter",
-      "billingType": "MESSAGES",
-      "includedMessages": 1000,
-      "priceCents": 19900,
-      "overagePriceCents": 5
-    }
-  ]
-}`} title="Response" />
+  <p>Response (array of plans):</p>
+  <CodeBlock language="json" code={`[
+  {
+    "id": "uuid-of-plan",
+    "name": "Starter",
+    "billingType": "PERIOD",
+    "period": "MONTHLY",
+    "priceCents": 4900,
+    "currency": "BRL",
+    "isActive": true,
+    "isPublic": true,
+    "createdAt": "2026-01-01T00:00:00.000Z"
+  }
+]`} title="Response" />
 
   <h2>Register a Company</h2>
   <CodeBlock language="bash" code={`curl -X POST https://api.ixblix.app/api/companies/register \\
@@ -50,7 +51,19 @@ const locale: Locale = 'en';
     </tbody>
   </table>
 
-  <p>The response includes a <code>checkoutUrl</code> — redirect the company owner there to complete payment.</p>
+  <p>The response includes <code>company</code> and <code>payment</code> with a <code>checkoutUrl</code> — redirect the company owner there to complete payment.</p>
+  <CodeBlock language="json" code={`{
+  "company": { "id": "cmp_xxxx", "name": "Acme Corporation", "handle": "acme", "status": "PENDING_PAYMENT" },
+  "payment": {
+    "transactionId": "company_cmp_xxxx-txn",
+    "provider": "efi",
+    "amountCents": 4900,
+    "currency": "BRL",
+    "confirmationUrl": "/api/companies/cmp_xxxx/activate/company_cmp_xxxx-txn",
+    "status": "PENDING",
+    "checkoutUrl": "https://api.ixblix.app/checkout/company_cmp_xxxx-txn"
+  }
+}`} title="Response" />
 
   <h2>Activate the Company</h2>
   <p>After payment confirmation:</p>
@@ -59,8 +72,8 @@ const locale: Locale = 'en';
 
   <p>Response:</p>
   <CodeBlock language="json" code={`{
-  "company": { "id": "cmp_xxxx", "status": "ACTIVE" },
-  "apiKey": "smci_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+  "apiKey": "smci_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+  "status": "ACTIVE"
 }`} title="Response" />
 
   <p><strong>Important:</strong> The <code>apiKey</code> is shown only once. Store it securely.</p>

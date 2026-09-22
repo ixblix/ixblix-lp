@@ -17,8 +17,8 @@ const locale: Locale = 'en';
   -H "Content-Type: application/json" \\
   -d '{
     "name": "My CRM Platform",
-    "callbackUrl": "https://mycrm.example.com/ixblix/callback",
-    "contactEmail": "admin@mycrm.example.com"
+    "hostname": "mycrm.example.com",
+    "callbackUrl": "https://mycrm.example.com/ixblix/callback"
   }'`} title="cURL" />
 
   <h2>Request Fields</h2>
@@ -26,8 +26,9 @@ const locale: Locale = 'en';
     <thead><tr><th>Field</th><th>Required</th><th>Description</th></tr></thead>
     <tbody>
       <tr><td><code>name</code></td><td>Yes</td><td>Display name of your integrator.</td></tr>
+      <tr><td><code>hostname</code></td><td>Yes</td><td>Unique hostname for this integrator. Must be unique across all integrators.</td></tr>
       <tr><td><code>callbackUrl</code></td><td>Yes</td><td>URL where ixblix sends credentials for verification.</td></tr>
-      <tr><td><code>contactEmail</code></td><td>Yes</td><td>Contact email for the integrator.</td></tr>
+      <tr><td><code>force</code></td><td>No</td><td>If true, allows replacing an existing verified hostname registration. Defaults to false.</td></tr>
       <tr><td><code>subscriptionId</code></td><td>No</td><td>Subscription identifier in the format <code>{`{paymentProvider}:{id}`}</code>. The <code>id</code> portion is opaque to the API and interpreted by the payment provider internally. Required when the assigned payment provider needs a subscription reference.</td></tr>
     </tbody>
   </table>

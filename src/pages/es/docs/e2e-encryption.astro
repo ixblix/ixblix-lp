@@ -63,14 +63,19 @@ const locale: Locale = 'es';
   <h2>Ejemplo de Cifrado</h2>
   <CodeBlock language="typescript" code={`import { encryptToRecipient } from '@ixblix/sdk-js';
 
-const encrypted = encryptToRecipient({
-  plaintext: '¡Hola desde Acme Corp!',
-  recipientPublicKey: customerPublicKey,
-  senderPublicKey: operatorKey.publicKey,
-});
+const envelope = encryptToRecipient(
+  '¡Hola desde Acme Corp!',
+  customerPublicKeySpki,
+  operatorKey.keyId,
+  operatorKey.publicKeySpki,
+);
 
-// encrypted.content — ciphertext en base64
-// encrypted.key — clave AES envuelta en base64`} title="TypeScript (SDK)" />
+// envelope.content — ciphertext en base64
+// envelope.iv — IV en base64
+// envelope.authTag — tag de autenticación en base64
+// envelope.encryptedKey — clave AES envuelta para el cliente en base64
+// envelope.selfEncryptedKey — clave AES envuelta para sí mismo en base64
+// envelope.keyId — id de la clave del operador`} title="TypeScript (SDK)" />
 
   <PageNav
     prev={{ titleKey: 'nav.webhooks', path: 'webhooks' }}

@@ -16,36 +16,23 @@ const locale: Locale = 'es';
   <p>Los mensajes de medios siguen el mismo esquema de cifrado de extremo a extremo que los mensajes de texto. El archivo se cifra con una clave AES-256-GCM por mensaje, y la clave se envuelve para las claves públicas RSA del destinatario y del remitente.</p>
 
   <h2>Subir Medios</h2>
-  <p>Suba el medio al servicio de almacenamiento primero, luego referéncielo en un mensaje:</p>
-  <CodeBlock language="bash" code={`curl -X POST https://api.ixblix.app/api/media/upload \\
+  <p>Suba medios cifrados como multipart/form-data. Los bytes del archivo ya deben estar cifrados por el cliente; los campos del envelope describen cómo descriptografarlos. La respuesta es un objeto <code>Message</code> con un <code>mediaId</code> referenciando el archivo subido.</p>
+  <CodeBlock language="bash" code={`curl -X POST https://api.ixblix.app/api/media/company \\
   -H "X-API-Key: smci_xxxx" \\
-  -F "file=@foto.jpg" \\
-  -F "conversationId=conv_xxxx"`} title="cURL" />
+  -F "conversationId=conv_xxxx" \\
+  -F "file=@foto_cifrada.bin" \\
+  -F "iv=base64-iv" \\
+  -F "authTag=base64-auth-tag" \\
+  -F "encryptedKey=base64-clave-aes-envuelta" \\
+  -F "selfEncryptedKey=base64-clave-aes-envuelta-para-si" \\
+  -F "keyId=operator-key-1"`} title="cURL" />
 
-  <p>Respuesta:</p>
-  <CodeBlock language="json" code={`{
-  "mediaId": "med_xxxx",
-  "mimeType": "image/jpeg",
-  "sizeBytes": 245000,
-  "url": "https://storage.ixblix.app/media/med_xxxx"
-}`} title="Respuesta" />
+  <h2>Descargar Medios</h2>
+  <p>Obtenga los bytes cifrados brutos y headers del envelope:</p>
+  <CodeBlock language="bash" code={`curl https://api.ixblix.app/api/media/{mediaId}/content \\
+  -H "X-API-Key: smci_xxxx"`} title="cURL" />
 
-  <h2>Enviando un Mensaje de Medios</h2>
-  <p>Incluya el <code>mediaId</code> en su solicitud de mensaje. El campo <code>content</code> lleva un pie de foto cifrado (o cadena vacía si no hay pie).</p>
-  <CodeBlock language="bash" code={`curl -X POST https://api.ixblix.app/api/messages/company \\
-  -H "X-API-Key: smci_xxxx" \\
-  -H "Content-Type: application/json" \\
-  -d '{
-    "conversationId": "conv_xxxx",
-    "content": "<pie cifrado>",
-    "contentType": "image",
-    "mediaId": "med_xxxx",
-    "iv": "...",
-    "authTag": "...",
-    "encryptedKey": "...",
-    "selfEncryptedKey": "...",
-    "keyId": "..."
-  }'`} title="cURL" />
+  <p>Los metadatos (envelope + información del archivo) están disponibles en <code>GET /api/media/{mediaId}</code>.</p>
 
   <h2>Tipos de Contenido</h2>
   <table>
@@ -61,10 +48,10 @@ const locale: Locale = 'es';
   </table>
 
   <h2>Recibiendo Medios</h2>
-  <p>Cuando reciba un webhook <code>MESSAGE_RECEIVED</code> para un mensaje de medios, obtenga los detalles con <code>GET /api/messages/{"{conversationId}"}</code>. La respuesta incluye el <code>mediaId</code> y una URL de descarga.</p>
+  <p>Cuando reciba un webhook <code>MESSAGE_RECEIVED</code> para un mensaje de medios, obtenga los detalles con <code>GET /api/messages/{conversationId}</code>. La respuesta incluye el <code>mediaId</code> y campos del envelope. Descargue los bytes cifrados vía <code>GET /api/media/{mediaId}/content</code> y descriptografelos localmente.</p>
 
   <h2>Almacenamiento</h2>
-  <p>Los archivos se almacenan en almacenamiento de objetos compatible con S3. El backend gestiona URLs de subida y control de acceso. Los archivos se sirven a través de URLs firmadas que expiran después de una duración configurable.</p>
+  <p>Los archivos se almacenan cifrados en almacenamiento de objetos compatible con S3. El backend solo almacena ciphertext — nunca ve texto plano. El acceso se controla mediante la clave de API de la empresa o el token de la conversación.</p>
 
   <PageNav
     prev={{ titleKey: 'nav.richMessages', path: 'rich-messages' }}

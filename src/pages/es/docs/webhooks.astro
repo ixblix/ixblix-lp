@@ -16,7 +16,7 @@ const locale: Locale = 'es';
   <CodeBlock language="bash" code={`curl -X PUT https://api.ixblix.app/api/companies/webhook \\
   -H "X-API-Key: smci_xxxx" \\
   -H "Content-Type: application/json" \\
-  -d '{ "url": "https://mycrm.example.com/ixblix/webhooks" }'`} title="cURL" />
+  -d '{ "webhookUrl": "https://mycrm.example.com/ixblix/webhooks" }'`} title="cURL" />
 
   <p>La respuesta incluye el <code>webhookSecret</code> para verificar firmas. Almacénelo de forma segura — se devuelve <strong>solo una vez</strong>.</p>
 

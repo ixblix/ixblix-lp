@@ -17,8 +17,8 @@ const locale: Locale = 'pt';
   -H "Content-Type: application/json" \\
   -d '{
     "name": "My CRM Platform",
-    "callbackUrl": "https://mycrm.example.com/ixblix/callback",
-    "contactEmail": "admin@mycrm.example.com"
+    "hostname": "mycrm.example.com",
+    "callbackUrl": "https://mycrm.example.com/ixblix/callback"
   }'`} title="cURL" />
 
   <h2>Campos da Requisição</h2>
@@ -26,8 +26,9 @@ const locale: Locale = 'pt';
     <thead><tr><th>Campo</th><th>Obrigatório</th><th>Descrição</th></tr></thead>
     <tbody>
       <tr><td><code>name</code></td><td>Sim</td><td>Nome de exibição do seu integrador.</td></tr>
+      <tr><td><code>hostname</code></td><td>Sim</td><td>Hostname único para este integrador. Deve ser único entre todos os integradores.</td></tr>
       <tr><td><code>callbackUrl</code></td><td>Sim</td><td>URL para onde o ixblix envia as credenciais para verificação.</td></tr>
-      <tr><td><code>contactEmail</code></td><td>Sim</td><td>Email de contato do integrador.</td></tr>
+      <tr><td><code>force</code></td><td>Não</td><td>Se true, permite substituir um registro de hostname já verificado. Padrão: false.</td></tr>
       <tr><td><code>subscriptionId</code></td><td>Não</td><td>Identificador de assinatura no formato <code>{`{paymentProvider}:{id}`}</code>. A parte <code>id</code> é opaca para a API e interpretada internamente pelo provedor de pagamento. Obrigatório quando o provedor de pagamento atribuído precisa de uma referência de assinatura.</td></tr>
     </tbody>
   </table>
