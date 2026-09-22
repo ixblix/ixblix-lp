@@ -95,75 +95,75 @@ function Home() {
 
       {/* AI Agent Skills */}
       <section className="home-skills">
-        <h2 className="home-skills-title">AI Agent Skills</h2>
+        <h2 className="home-skills-title">{t('home.skills.title')}</h2>
         <p className="home-skills-desc">
-          Add these skill files to your AI agent (Claude, ChatGPT, Copilot, etc.) to enable full ixblix integration capabilities.
+          {t('home.skills.desc')}
         </p>
         <div className="home-skills-grid">
           <div className="home-skill-card">
             <div className="home-skill-icon">🔌</div>
-            <h3>REST API Skill</h3>
-            <p>Complete integration guide using direct HTTP/cURL calls. No SDK required.</p>
+            <h3>{t('home.skills.api.title')}</h3>
+            <p>{t('home.skills.api.desc')}</p>
             <a
               href="/skills/ixblix-api-integration.md"
               className="btn btn-outline-dark"
               download
             >
-              Download API Skill
+              {t('home.skills.api.download')}
             </a>
           </div>
           <div className="home-skill-card">
             <div className="home-skill-icon">📦</div>
-            <h3>JavaScript SDK Skill</h3>
-            <p>Full integration guide using the official @ixblix/sdk-js TypeScript package.</p>
+            <h3>{t('home.skills.sdk.title')}</h3>
+            <p>{t('home.skills.sdk.desc')}</p>
             <a
               href="/skills/ixblix-sdk-integration.md"
               className="btn btn-outline-dark"
               download
             >
-              Download SDK Skill
+              {t('home.skills.sdk.download')}
             </a>
           </div>
         </div>
         <div className="home-skills-instructions">
-          <h3>How to Add Skills to Your AI Agent</h3>
+          <h3>{t('home.skills.instructions.title')}</h3>
           <div className="home-skill-instruction-item">
-            <h4>Claude (Anthropic)</h4>
+            <h4>{t('home.skills.instructions.claude.title')}</h4>
             <ol>
-              <li>Download the skill file above</li>
-              <li>Open Claude and go to Projects</li>
-              <li>Create a new project or edit existing</li>
-              <li>Click "Add Knowledge" → "Upload file"</li>
-              <li>Upload the downloaded .md file</li>
-              <li>Claude now has full ixblix integration knowledge</li>
+              <li>{t('home.skills.instructions.claude.step1')}</li>
+              <li>{t('home.skills.instructions.claude.step2')}</li>
+              <li>{t('home.skills.instructions.claude.step3')}</li>
+              <li>{t('home.skills.instructions.claude.step4')}</li>
+              <li>{t('home.skills.instructions.claude.step5')}</li>
+              <li>{t('home.skills.instructions.claude.step6')}</li>
             </ol>
           </div>
           <div className="home-skill-instruction-item">
-            <h4>ChatGPT (OpenAI)</h4>
+            <h4>{t('home.skills.instructions.chatgpt.title')}</h4>
             <ol>
-              <li>Download the skill file above</li>
-              <li>Open ChatGPT and go to "Create a GPT"</li>
-              <li>In the "Configure" tab, scroll to "Knowledge"</li>
-              <li>Click "Upload" and select the .md file</li>
-              <li>Your custom GPT now knows ixblix integration</li>
+              <li>{t('home.skills.instructions.chatgpt.step1')}</li>
+              <li>{t('home.skills.instructions.chatgpt.step2')}</li>
+              <li>{t('home.skills.instructions.chatgpt.step3')}</li>
+              <li>{t('home.skills.instructions.chatgpt.step4')}</li>
+              <li>{t('home.skills.instructions.chatgpt.step5')}</li>
             </ol>
           </div>
           <div className="home-skill-instruction-item">
-            <h4>GitHub Copilot</h4>
+            <h4>{t('home.skills.instructions.copilot.title')}</h4>
             <ol>
-              <li>Download the skill file above</li>
-              <li>Place it in your project's <code>.github/instructions/</code> folder</li>
-              <li>Or add it to your <code>.github/copilot-instructions.md</code></li>
-              <li>Copilot will reference it when answering ixblix questions</li>
+              <li>{t('home.skills.instructions.copilot.step1')}</li>
+              <li dangerouslySetInnerHTML={{ __html: t('home.skills.instructions.copilot.step2') }} />
+              <li dangerouslySetInnerHTML={{ __html: t('home.skills.instructions.copilot.step3') }} />
+              <li>{t('home.skills.instructions.copilot.step4')}</li>
             </ol>
           </div>
           <div className="home-skill-instruction-item">
-            <h4>Cursor / Windsurf / Other IDEs</h4>
+            <h4>{t('home.skills.instructions.cursor.title')}</h4>
             <ol>
-              <li>Download the skill file above</li>
-              <li>Place it in your project root or <code>.cursor/rules/</code> folder</li>
-              <li>Reference it in your agent's system prompt or rules file</li>
-              <li>The agent will use it as context for ixblix integration tasks</li>
+              <li>{t('home.skills.instructions.cursor.step1')}</li>
+              <li dangerouslySetInnerHTML={{ __html: t('home.skills.instructions.cursor.step2') }} />
+              <li>{t('home.skills.instructions.cursor.step3')}</li>
+              <li>{t('home.skills.instructions.cursor.step4')}</li>
             </ol>
           </div>
         </div>
