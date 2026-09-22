@@ -1,0 +1,112 @@
+---
+import DocsLayout from '../../../layouts/DocsLayout.astro';
+import CodeBlock from '../../../components/CodeBlock.astro';
+import PageNav from '../../../components/PageNav.astro';
+import { t } from '../../../i18n';
+import type { Locale } from '../../../i18n/config';
+
+const locale: Locale = 'es';
+---
+
+<DocsLayout>
+  <h1>{t(locale, 'nav.sdk')}</h1>
+  <p class="lead">Paquete oficial <code>@ixblix/sdk-js</code> TypeScript con cliente HTTP tipado, auxiliares de criptografía y verificación de webhooks.</p>
+
+  <h2>Instalación</h2>
+  <CodeBlock language="bash" code="npm install @ixblix/sdk-js" title="npm" />
+
+  <h2>Configuración del Cliente</h2>
+  <CodeBlock language="typescript" code={`import { IxblixClient } from '@ixblix/sdk-js';
+
+// Cliente en el ámbito del integrador
+const integratorClient = new IxblixClient({
+  baseUrl: 'https://api.ixblix.app',
+  integratorId: 'int_xxxx',
+  accessToken: 'ixblix_integrator_token_xxxx',
+});
+
+// Cliente en el ámbito de la empresa
+const companyClient = new IxblixClient({
+  baseUrl: 'https://api.ixblix.app',
+  apiKey: 'smci_xxxx',
+});`} title="TypeScript" />
+
+  <h2>Métodos del Integrador</h2>
+  <CodeBlock language="typescript" code={`// Registrar
+await client.integrator.register({ name, callbackUrl, contactEmail });
+
+// Perfil
+const profile = await client.integrator.getProfile();
+
+// Planes
+const { plans } = await client.plans.list();
+
+// Registro de empresa
+const { company, checkoutUrl } = await client.company.register({ name, planId, handle });
+
+// Activación de empresa
+const { apiKey } = await client.company.activate(companyId, transactionId);`} title="TypeScript" />
+
+  <h2>Métodos de la Empresa</h2>
+  <CodeBlock language="typescript" code={`// Webhook
+const { webhookSecret } = await client.company.setWebhook({ url });
+
+// Clave de cifrado
+await client.company.setEncryptionKey({ publicKey });
+
+// Conversaciones
+const { conversation, deeplink } = await client.conversation.create({
+  contact: { externalId, name, metadata },
+});
+
+// Mensajes
+await client.message.sendCompany({
+  conversationId,
+  encryptedContent: encrypted.content,
+  encryptedKey: encrypted.key,
+});
+
+// Acuses de lectura
+await client.message.markRead(conversationId, messageId);`} title="TypeScript" />
+
+  <h2>Auxiliares de Criptografía</h2>
+  <CodeBlock language="typescript" code={`import {
+  generateOperatorKeyPair,
+  loadOrCreateOperatorKey,
+  encryptToRecipient,
+  decryptEnvelope,
+} from '@ixblix/sdk-js';
+
+// Generar o cargar par de claves
+const operatorKey = await loadOrCreateOperatorKey({
+  path: './keys/operator.json',
+});
+
+// Cifrar
+const encrypted = encryptToRecipient({
+  plaintext: '¡Hola!',
+  recipientPublicKey: customerPublicKey,
+  senderPublicKey: operatorKey.publicKey,
+});
+
+// Descifrar
+const plaintext = decryptEnvelope({
+  envelope: message,
+  privateKey: operatorKey.privateKey,
+});`} title="TypeScript" />
+
+  <h2>Verificación de Webhooks</h2>
+  <CodeBlock language="typescript" code={`import { verifyWebhook, WEBHOOK_SIGNATURE_HEADER } from '@ixblix/sdk-js';
+
+app.post('/webhooks', (req, res) => {
+  const signature = req.header(WEBHOOK_SIGNATURE_HEADER);
+  const { event } = verifyWebhook(req.body, webhookSecret, signature);
+  // Manejar evento...
+  res.status(200).send('OK');
+});`} title="TypeScript" />
+
+  <PageNav
+    prev={{ titleKey: 'nav.errors', path: 'errors' }}
+    next={{ titleKey: 'nav.sampleIntegrator', path: 'sample-integrator' }}
+  />
+</DocsLayout>

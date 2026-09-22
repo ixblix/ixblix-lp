@@ -1,0 +1,73 @@
+---
+import DocsLayout from '../../../layouts/DocsLayout.astro';
+import CodeBlock from '../../../components/CodeBlock.astro';
+import PageNav from '../../../components/PageNav.astro';
+import { t } from '../../../i18n';
+import type { Locale } from '../../../i18n/config';
+
+const locale: Locale = 'es';
+---
+
+<DocsLayout>
+  <h1>{t(locale, 'nav.media')}</h1>
+  <p class="lead">Envíe y reciba archivos adjuntos de medios — imágenes, audio, video, documentos — en conversaciones cifradas.</p>
+
+  <h2>Visión General</h2>
+  <p>Los mensajes de medios siguen el mismo esquema de cifrado de extremo a extremo que los mensajes de texto. El archivo se cifra con una clave AES-256-GCM por mensaje, y la clave se envuelve para las claves públicas RSA del destinatario y del remitente.</p>
+
+  <h2>Subir Medios</h2>
+  <p>Suba el medio al servicio de almacenamiento primero, luego referéncielo en un mensaje:</p>
+  <CodeBlock language="bash" code={`curl -X POST https://api.ixblix.app/api/media/upload \\
+  -H "X-API-Key: smci_xxxx" \\
+  -F "file=@foto.jpg" \\
+  -F "conversationId=conv_xxxx"`} title="cURL" />
+
+  <p>Respuesta:</p>
+  <CodeBlock language="json" code={`{
+  "mediaId": "med_xxxx",
+  "mimeType": "image/jpeg",
+  "sizeBytes": 245000,
+  "url": "https://storage.ixblix.app/media/med_xxxx"
+}`} title="Respuesta" />
+
+  <h2>Enviando un Mensaje de Medios</h2>
+  <p>Incluya el <code>mediaId</code> en su solicitud de mensaje. El campo <code>content</code> lleva un pie de foto cifrado (o cadena vacía si no hay pie).</p>
+  <CodeBlock language="bash" code={`curl -X POST https://api.ixblix.app/api/messages/company \\
+  -H "X-API-Key: smci_xxxx" \\
+  -H "Content-Type: application/json" \\
+  -d '{
+    "conversationId": "conv_xxxx",
+    "content": "<pie cifrado>",
+    "contentType": "image",
+    "mediaId": "med_xxxx",
+    "iv": "...",
+    "authTag": "...",
+    "encryptedKey": "...",
+    "selfEncryptedKey": "...",
+    "keyId": "..."
+  }'`} title="cURL" />
+
+  <h2>Tipos de Contenido</h2>
+  <table>
+    <thead><tr><th>contentType</th><th>Descripción</th></tr></thead>
+    <tbody>
+      <tr><td><code>text</code></td><td>Mensaje de texto plano (predeterminado).</td></tr>
+      <tr><td><code>image</code></td><td>Adjunto de imagen (JPEG, PNG, WebP).</td></tr>
+      <tr><td><code>audio</code></td><td>Mensaje de audio (OGG, MP3, M4A).</td></tr>
+      <tr><td><code>video</code></td><td>Adjunto de video (MP4, WebM).</td></tr>
+      <tr><td><code>document</code></td><td>Adjunto de documento (PDF, DOCX, etc.).</td></tr>
+      <tr><td><code>react</code></td><td>Emoji de reacción (usa <code>replyToId</code>).</td></tr>
+    </tbody>
+  </table>
+
+  <h2>Recibiendo Medios</h2>
+  <p>Cuando reciba un webhook <code>MESSAGE_RECEIVED</code> para un mensaje de medios, obtenga los detalles con <code>GET /api/messages/{"{conversationId}"}</code>. La respuesta incluye el <code>mediaId</code> y una URL de descarga.</p>
+
+  <h2>Almacenamiento</h2>
+  <p>Los archivos se almacenan en almacenamiento de objetos compatible con S3. El backend gestiona URLs de subida y control de acceso. Los archivos se sirven a través de URLs firmadas que expiran después de una duración configurable.</p>
+
+  <PageNav
+    prev={{ titleKey: 'nav.richMessages', path: 'rich-messages' }}
+    next={{ titleKey: 'nav.presence', path: 'presence' }}
+  />
+</DocsLayout>

@@ -1,0 +1,60 @@
+---
+import DocsLayout from '../../../layouts/DocsLayout.astro';
+import CodeBlock from '../../../components/CodeBlock.astro';
+import PageNav from '../../../components/PageNav.astro';
+import { t } from '../../../i18n';
+import type { Locale } from '../../../i18n/config';
+
+const locale: Locale = 'es';
+---
+
+<DocsLayout>
+  <h1>{t(locale, 'nav.quickStart')}</h1>
+  <p class="lead">Comience a usar la API de ixblix en minutos. Esta guía presenta el flujo completo de integración.</p>
+
+  <h2>Visión General</h2>
+  <p>ixblix es una plataforma independiente de mensajería comercial que permite conversaciones seguras y white-label con cifrado de extremo a extremo. Los integradores (CRMs, help desks) registran empresas, crean conversaciones e intercambian mensajes cifrados vía API REST y webhooks.</p>
+
+  <h2>Flujo de Integración</h2>
+  <ol>
+    <li><strong>Regístrese como Integrador</strong> — Obtenga credenciales de API para su plataforma.</li>
+    <li><strong>Registre una Empresa</strong> — Cree una empresa en su cuenta de integrador.</li>
+    <li><strong>Active la Empresa</strong> — Complete el pago para recibir la clave de API.</li>
+    <li><strong>Configure Webhooks</strong> — Defina su endpoint para recibir eventos.</li>
+    <li><strong>Registre Clave de Cifrado</strong> — Envíe su clave pública RSA para E2EE.</li>
+    <li><strong>Cree una Conversación</strong> — Obtenga un deeplink para compartir con el cliente.</li>
+    <li><strong>Intercambie Mensajes</strong> — Envíe y reciba mensajes cifrados.</li>
+  </ol>
+
+  <h2>Ejemplo Rápido</h2>
+  <p>Registre su integrador:</p>
+  <CodeBlock language="bash" code={`curl -X POST https://api.ixblix.app/api/integrators/register \\
+  -H "Content-Type: application/json" \\
+  -d '{
+    "name": "My CRM Platform",
+    "callbackUrl": "https://mycrm.example.com/ixblix/callback",
+    "contactEmail": "admin@mycrm.example.com"
+  }'`} title="cURL" />
+
+  <p>Cree una conversación:</p>
+  <CodeBlock language="bash" code={`curl -X POST https://api.ixblix.app/api/conversations \\
+  -H "X-API-Key: smci_xxxx" \\
+  -H "Content-Type: application/json" \\
+  -d '{
+    "contact": {
+      "externalId": "whatsapp_5511999999999",
+      "name": "Jane Doe"
+    }
+  }'`} title="cURL" />
+
+  <h2>Siguientes Pasos</h2>
+  <ul>
+    <li><a href="/es/docs/integrator-registration">Registro de Integrador</a> — Guía detallada de registro.</li>
+    <li><a href="/es/docs/sdk">SDK JavaScript</a> — Use el paquete oficial <code>@ixblix/sdk-js</code>.</li>
+    <li><a href="/es/docs/sample-integrator">Integrador de Ejemplo</a> — Ejecute el simulador localmente.</li>
+  </ul>
+
+  <PageNav
+    next={{ titleKey: 'nav.integratorRegistration', path: 'integrator-registration' }}
+  />
+</DocsLayout>

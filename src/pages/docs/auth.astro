@@ -1,0 +1,51 @@
+---
+import DocsLayout from '../../layouts/DocsLayout.astro';
+import CodeBlock from '../../components/CodeBlock.astro';
+import PageNav from '../../components/PageNav.astro';
+import { t } from '../../i18n';
+import type { Locale } from '../../i18n/config';
+
+const locale: Locale = 'en';
+---
+
+<DocsLayout>
+  <h1>{t(locale, 'nav.auth')}</h1>
+  <p class="lead">Authentication reference for the ixblix API.</p>
+
+  <h2>API Key Authentication</h2>
+  <p>All company-scoped endpoints require the <code>X-API-Key</code> header:</p>
+  <CodeBlock language="http" code={`X-API-Key: smci_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx`} title="Header" />
+
+  <h2>Obtaining an API Key</h2>
+  <p>API keys are generated during company activation. See <a href="/docs/company-registration">Company Registration</a>.</p>
+
+  <h2>Integrator Authentication</h2>
+  <p>Integrator-scoped endpoints use HTTP Basic Auth with <code>integratorId</code> and <code>accessToken</code>:</p>
+  <CodeBlock language="bash" code={`curl https://api.ixblix.app/api/plans \\
+  -u "int_xxxx:ixblix_integrator_token_xxxx"`} title="cURL" />
+
+  <h2>Contact (Customer) Authentication</h2>
+  <p>Customer-facing endpoints use the conversation <strong>token</strong> (from the deeplink) instead of an API key. No authentication header is needed — the token is included in the request body or URL path.</p>
+
+  <h2>Security Recommendations</h2>
+  <ul>
+    <li>Store API keys in a secure secret manager, never in source control.</li>
+    <li>Rotate keys if they are exposed.</li>
+    <li>Use HTTPS for all requests.</li>
+    <li>The API key grants access to all company resources; treat it like a password.</li>
+  </ul>
+
+  <h2>Authentication Errors</h2>
+  <table>
+    <thead><tr><th>Status</th><th>Code</th><th>Meaning</th></tr></thead>
+    <tbody>
+      <tr><td><code>401</code></td><td><code>UNAUTHORIZED</code></td><td>API key is missing or invalid.</td></tr>
+      <tr><td><code>403</code></td><td><code>FORBIDDEN</code></td><td>Company exists but is not active.</td></tr>
+    </tbody>
+  </table>
+
+  <PageNav
+    prev={{ titleKey: 'nav.keyTransfer', path: 'key-transfer' }}
+    next={{ titleKey: 'nav.errors', path: 'errors' }}
+  />
+</DocsLayout>

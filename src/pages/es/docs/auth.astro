@@ -1,0 +1,51 @@
+---
+import DocsLayout from '../../../layouts/DocsLayout.astro';
+import CodeBlock from '../../../components/CodeBlock.astro';
+import PageNav from '../../../components/PageNav.astro';
+import { t } from '../../../i18n';
+import type { Locale } from '../../../i18n/config';
+
+const locale: Locale = 'es';
+---
+
+<DocsLayout>
+  <h1>{t(locale, 'nav.auth')}</h1>
+  <p class="lead">Referencia de autenticación para la API de ixblix.</p>
+
+  <h2>Autenticación por Clave de API</h2>
+  <p>Todos los endpoints en el ámbito de la empresa requieren el header <code>X-API-Key</code>:</p>
+  <CodeBlock language="http" code={`X-API-Key: smci_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx`} title="Header" />
+
+  <h2>Obteniendo una Clave de API</h2>
+  <p>Las claves de API se generan durante la activación de la empresa. Veja <a href="/es/docs/company-registration">Registro de Empresa</a>.</p>
+
+  <h2>Autenticación de Integrador</h2>
+  <p>Los endpoints en el ámbito del integrador usan HTTP Basic Auth con <code>integratorId</code> y <code>accessToken</code>:</p>
+  <CodeBlock language="bash" code={`curl https://api.ixblix.app/api/plans \\
+  -u "int_xxxx:ixblix_integrator_token_xxxx"`} title="cURL" />
+
+  <h2>Autenticación del Contacto (Cliente)</h2>
+  <p>Los endpoints para el cliente usan el <strong>token</strong> de la conversación (del deeplink) en lugar de una clave de API. No se necesita header de autenticación — el token se incluye en el cuerpo de la solicitud o en la URL.</p>
+
+  <h2>Recomendaciones de Seguridad</h2>
+  <ul>
+    <li>Almacene claves de API en un gestor de secretos seguro, nunca en el control de versiones.</li>
+    <li>Rote claves si son expuestas.</li>
+    <li>Use HTTPS para todas las solicitudes.</li>
+    <li>La clave de API otorga acceso a todos los recursos de la empresa; trátela como una contraseña.</li>
+  </ul>
+
+  <h2>Errores de Autenticación</h2>
+  <table>
+    <thead><tr><th>Status</th><th>Código</th><th>Significado</th></tr></thead>
+    <tbody>
+      <tr><td><code>401</code></td><td><code>UNAUTHORIZED</code></td><td>Clave de API ausente o inválida.</td></tr>
+      <tr><td><code>403</code></td><td><code>FORBIDDEN</code></td><td>La empresa existe pero no está activa.</td></tr>
+    </tbody>
+  </table>
+
+  <PageNav
+    prev={{ titleKey: 'nav.keyTransfer', path: 'key-transfer' }}
+    next={{ titleKey: 'nav.errors', path: 'errors' }}
+  />
+</DocsLayout>

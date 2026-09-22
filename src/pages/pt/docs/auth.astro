@@ -1,0 +1,51 @@
+---
+import DocsLayout from '../../../layouts/DocsLayout.astro';
+import CodeBlock from '../../../components/CodeBlock.astro';
+import PageNav from '../../../components/PageNav.astro';
+import { t } from '../../../i18n';
+import type { Locale } from '../../../i18n/config';
+
+const locale: Locale = 'pt';
+---
+
+<DocsLayout>
+  <h1>{t(locale, 'nav.auth')}</h1>
+  <p class="lead">Referência de autenticação para a API ixblix.</p>
+
+  <h2>Autenticação por Chave de API</h2>
+  <p>Todos os endpoints no escopo da empresa requerem o header <code>X-API-Key</code>:</p>
+  <CodeBlock language="http" code={`X-API-Key: smci_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx`} title="Header" />
+
+  <h2>Obtendo uma Chave de API</h2>
+  <p>Chaves de API são geradas durante a ativação da empresa. Veja <a href="/pt/docs/company-registration">Registro de Empresa</a>.</p>
+
+  <h2>Autenticação de Integrador</h2>
+  <p>Endpoints no escopo do integrador usam HTTP Basic Auth com <code>integratorId</code> e <code>accessToken</code>:</p>
+  <CodeBlock language="bash" code={`curl https://api.ixblix.app/api/plans \\
+  -u "int_xxxx:ixblix_integrator_token_xxxx"`} title="cURL" />
+
+  <h2>Autenticação do Contato (Cliente)</h2>
+  <p>Endpoints para o cliente usam o <strong>token</strong> da conversa (do deeplink) ao invés de uma chave de API. Nenhum header de autenticação é necessário — o token é incluído no corpo da requisição ou na URL.</p>
+
+  <h2>Recomendações de Segurança</h2>
+  <ul>
+    <li>Armazene chaves de API em um gerenciador de segredos seguro, nunca no controle de versão.</li>
+    <li>Rotacione chaves se forem expostas.</li>
+    <li>Use HTTPS para todas as requisições.</li>
+    <li>A chave de API concede acesso a todos os recursos da empresa; trate-a como uma senha.</li>
+  </ul>
+
+  <h2>Erros de Autenticação</h2>
+  <table>
+    <thead><tr><th>Status</th><th>Código</th><th>Significado</th></tr></thead>
+    <tbody>
+      <tr><td><code>401</code></td><td><code>UNAUTHORIZED</code></td><td>Chave de API ausente ou inválida.</td></tr>
+      <tr><td><code>403</code></td><td><code>FORBIDDEN</code></td><td>Empresa existe mas não está ativa.</td></tr>
+    </tbody>
+  </table>
+
+  <PageNav
+    prev={{ titleKey: 'nav.keyTransfer', path: 'key-transfer' }}
+    next={{ titleKey: 'nav.errors', path: 'errors' }}
+  />
+</DocsLayout>

@@ -1,0 +1,123 @@
+---
+import BaseLayout from './BaseLayout.astro';
+import { t, getLocaleFromUrl } from '../i18n';
+import { locales, localeNames, type Locale } from '../i18n/config';
+
+const locale = getLocaleFromUrl(Astro.url) as Locale;
+const navGroups = [
+  {
+    labelKey: 'nav.gettingStarted',
+    items: [
+      { titleKey: 'nav.quickStart', path: 'quickstart' },
+      { titleKey: 'nav.integratorRegistration', path: 'integrator-registration' },
+      { titleKey: 'nav.companyRegistration', path: 'company-registration' },
+      { titleKey: 'nav.messaging', path: 'messaging' },
+    ],
+  },
+  {
+    labelKey: 'nav.guides',
+    items: [
+      { titleKey: 'nav.webhooks', path: 'webhooks' },
+      { titleKey: 'nav.e2eEncryption', path: 'e2e-encryption' },
+      { titleKey: 'nav.richMessages', path: 'rich-messages' },
+      { titleKey: 'nav.media', path: 'media' },
+      { titleKey: 'nav.presence', path: 'presence' },
+      { titleKey: 'nav.keyTransfer', path: 'key-transfer' },
+    ],
+  },
+  {
+    labelKey: 'nav.reference',
+    items: [
+      { titleKey: 'nav.auth', path: 'auth' },
+      { titleKey: 'nav.errors', path: 'errors' },
+      { titleKey: 'nav.sdk', path: 'sdk' },
+      { titleKey: 'nav.sampleIntegrator', path: 'sample-integrator' },
+    ],
+  },
+];
+
+const currentPath = Astro.url.pathname.replace(/\/$/, '').split('/').pop() || 'quickstart';
+
+function localizedPath(slug: string, loc: Locale): string {
+  if (loc === 'en') return `/docs/${slug}`;
+  return `/${loc}/docs/${slug}`;
+}
+
+function homePath(loc: Locale): string {
+  if (loc === 'en') return '/';
+  return `/${loc}`;
+}
+---
+
+<BaseLayout title={`${t(locale, 'nav.quickStart')} — ixblix`} locale={locale}>
+  <div class="app-layout">
+    <div class="mobile-header">
+      <button class="mobile-menu-btn" id="menu-toggle" type="button" aria-label="Toggle menu">☰</button>
+    </div>
+    <div class="sidebar-overlay" id="sidebar-overlay"></div>
+
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-header">
+        <a href={homePath(locale)} class="sidebar-brand">
+          <div class="sidebar-brand-icon">i</div>
+          <span class="sidebar-brand-name">ixblix</span>
+        </a>
+      </div>
+
+      <nav class="sidebar-nav">
+        {navGroups.map((group) => (
+          <div class="sidebar-group">
+            <div class="sidebar-group-title">{t(locale, group.labelKey)}</div>
+            {group.items.map((item) => (
+              <a
+                href={localizedPath(item.path, locale)}
+                class={`sidebar-link ${currentPath === item.path ? 'active' : ''}`}
+              >
+                {t(locale, item.titleKey)}
+              </a>
+            ))}
+          </div>
+        ))}
+      </nav>
+
+      <div class="sidebar-footer">
+        <div class="sidebar-locale-switcher">
+          {locales.map((l) => (
+            <a
+              href={l === 'en' ? `/docs/${currentPath}` : `/${l}/docs/${currentPath}`}
+              class={`sidebar-locale-btn ${locale === l ? 'active' : ''}`}
+            >
+              {localeNames[l]}
+            </a>
+          ))}
+        </div>
+        <a href="https://dev.ixblix.app" class="sidebar-footer-link" target="_blank" rel="noopener noreferrer">
+          {t(locale, 'nav.apiReference')}
+        </a>
+        <a href="https://github.com/ixblix" class="sidebar-footer-link" style="margin-top: 0.5rem" target="_blank" rel="noopener noreferrer">
+          {t(locale, 'nav.github')}
+        </a>
+      </div>
+    </aside>
+
+    <main class="main-content">
+      <div class="docs-content">
+        <slot />
+      </div>
+    </main>
+  </div>
+
+  <script>
+    const toggle = document.getElementById('menu-toggle');
+    const sidebar = document.getElementById('sidebar');
+    const overlay = document.getElementById('sidebar-overlay');
+    toggle?.addEventListener('click', () => {
+      sidebar?.classList.toggle('open');
+      overlay?.classList.toggle('open');
+    });
+    overlay?.addEventListener('click', () => {
+      sidebar?.classList.remove('open');
+      overlay?.classList.remove('open');
+    });
+  </script>
+</BaseLayout>

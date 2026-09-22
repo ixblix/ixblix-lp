@@ -1,0 +1,79 @@
+---
+import DocsLayout from '../../../layouts/DocsLayout.astro';
+import CodeBlock from '../../../components/CodeBlock.astro';
+import PageNav from '../../../components/PageNav.astro';
+import { t } from '../../../i18n';
+import type { Locale } from '../../../i18n/config';
+
+const locale: Locale = 'es';
+---
+
+<DocsLayout>
+  <h1>{t(locale, 'nav.e2eEncryption')}</h1>
+  <p class="lead">Cifrado híbrido RSA + AES-256-GCM. Los mensajes se cifran en el cliente — el servidor nunca ve el texto plano.</p>
+
+  <h2>Modelo de Amenaza</h2>
+  <p><strong>Confiables:</strong> El operador (desk/CRM) y el cliente. Cada uno posee su propia clave privada.</p>
+  <p><strong>No confiables:</strong> El backend de ixblix, la base de datos y los atacantes de red. El backend nunca posee una clave privada y nunca ve texto plano.</p>
+
+  <h3>Lo que NO está protegido</h3>
+  <ul>
+    <li><strong>Metadatos</strong>: quién habla con quién, cuándo y cuántos mensajes.</li>
+    <li><strong>Almacenamiento del operador</strong>: el operador es responsable de proteger su clave privada.</li>
+    <li><strong>Dispositivo del cliente</strong>: si está comprometido, la clave privada puede ser robada.</li>
+  </ul>
+
+  <h2>Esquema Criptográfico</h2>
+  <table>
+    <thead><tr><th>Propósito</th><th>Algoritmo</th><th>Parámetros</th></tr></thead>
+    <tbody>
+      <tr><td>Envoltura de clave</td><td>RSA-OAEP</td><td>2048-bit, SHA-256</td></tr>
+      <tr><td>Contenido del mensaje</td><td>AES-256-GCM</td><td>Clave 256-bit, IV 96-bit, tag 128-bit</td></tr>
+    </tbody>
+  </table>
+
+  <p>Cada mensaje usa una clave <strong>nueva</strong> AES-256-GCM. Esa clave AES se envuelve (cifra) con la clave pública RSA del destinatario. Esto proporciona forward secrecy entre mensajes.</p>
+
+  <h2>Auto-Lectura</h2>
+  <p>La clave AES de cada mensaje se envuelve <strong>dos veces</strong>: una para el destinatario y una para la propia clave pública del remitente. Esto permite que cada lado lea sus propios mensajes enviados.</p>
+
+  <h2>Envelope del Mensaje</h2>
+  <table>
+    <thead><tr><th>Campo</th><th>Descripción</th></tr></thead>
+    <tbody>
+      <tr><td><code>content</code></td><td>Ciphertext AES-256-GCM (base64).</td></tr>
+      <tr><td><code>iv</code></td><td>Vector de inicialización AES-GCM de 96 bits (base64).</td></tr>
+      <tr><td><code>authTag</code></td><td>Tag de autenticación AES-GCM de 128 bits (base64).</td></tr>
+      <tr><td><code>encryptedKey</code></td><td>Clave AES envuelta por la clave RSA pública del destinatario.</td></tr>
+      <tr><td><code>selfEncryptedKey</code></td><td>Clave AES envuelta por la propia clave RSA del remitente.</td></tr>
+      <tr><td><code>keyId</code></td><td>Identificador de la clave pública del remitente.</td></tr>
+    </tbody>
+  </table>
+
+  <h2>Flujo de Intercambio de Claves</h2>
+  <ol>
+    <li>El operador genera un par de claves RSA persistente y registra la clave pública vía <code>PUT /api/companies/encryption-key</code>.</li>
+    <li>El operador crea una conversación. El backend hace snapshot de la clave activa de la empresa.</li>
+    <li>El cliente abre el deeplink. El navegador genera un par de claves RSA. La clave privada queda en IndexedDB.</li>
+    <li>El cliente registra la clave pública vía <code>POST /api/conversations/{"{token}"}/key</code>.</li>
+    <li>ixblix envía un webhook <code>CUSTOMER_JOINED</code> con la clave pública del cliente.</li>
+    <li>Ambos lados ahora pueden cifrar mensajes el uno para el otro.</li>
+  </ol>
+
+  <h2>Ejemplo de Cifrado</h2>
+  <CodeBlock language="typescript" code={`import { encryptToRecipient } from '@ixblix/sdk-js';
+
+const encrypted = encryptToRecipient({
+  plaintext: '¡Hola desde Acme Corp!',
+  recipientPublicKey: customerPublicKey,
+  senderPublicKey: operatorKey.publicKey,
+});
+
+// encrypted.content — ciphertext en base64
+// encrypted.key — clave AES envuelta en base64`} title="TypeScript (SDK)" />
+
+  <PageNav
+    prev={{ titleKey: 'nav.webhooks', path: 'webhooks' }}
+    next={{ titleKey: 'nav.richMessages', path: 'rich-messages' }}
+  />
+</DocsLayout>

@@ -1,0 +1,83 @@
+---
+import DocsLayout from '../../../layouts/DocsLayout.astro';
+import CodeBlock from '../../../components/CodeBlock.astro';
+import PageNav from '../../../components/PageNav.astro';
+import { t } from '../../../i18n';
+import type { Locale } from '../../../i18n/config';
+
+const locale: Locale = 'es';
+---
+
+<DocsLayout>
+  <h1>{t(locale, 'nav.companyRegistration')}</h1>
+  <p class="lead">Registre una empresa en su cuenta de integrador, complete el pago y obtenga la clave de API.</p>
+
+  <h2>Listar Planes Disponibles</h2>
+  <CodeBlock language="bash" code={`curl https://api.ixblix.app/api/plans \\
+  -u "int_xxxx:ixblix_integrator_token_xxxx"`} title="cURL" />
+
+  <p>Respuesta:</p>
+  <CodeBlock language="json" code={`{
+  "plans": [
+    {
+      "id": "plan_starter",
+      "name": "Starter",
+      "billingType": "MESSAGES",
+      "includedMessages": 1000,
+      "priceCents": 19900,
+      "overagePriceCents": 5
+    }
+  ]
+}`} title="Respuesta" />
+
+  <h2>Registrar una Empresa</h2>
+  <CodeBlock language="bash" code={`curl -X POST https://api.ixblix.app/api/companies/register \\
+  -u "int_xxxx:ixblix_integrator_token_xxxx" \\
+  -H "Content-Type: application/json" \\
+  -d '{
+    "name": "Acme Corporation",
+    "planId": "plan_starter",
+    "handle": "acme"
+  }'`} title="cURL" />
+
+  <h3>Campos de la Solicitud</h3>
+  <table>
+    <thead><tr><th>Campo</th><th>Obligatorio</th><th>Descripción</th></tr></thead>
+    <tbody>
+      <tr><td><code>name</code></td><td>Sí</td><td>Nombre de visualización de la empresa.</td></tr>
+      <tr><td><code>planId</code></td><td>Sí</td><td>ID de un plan de suscripción.</td></tr>
+      <tr><td><code>handle</code></td><td>Sí</td><td>Identificador público único.</td></tr>
+    </tbody>
+  </table>
+
+  <p>La respuesta incluye un <code>checkoutUrl</code> — redirija al dueño de la empresa allí para completar el pago.</p>
+
+  <h2>Activar la Empresa</h2>
+  <p>Después de la confirmación del pago:</p>
+  <CodeBlock language="bash" code={`curl -X POST https://api.ixblix.app/api/companies/{companyId}/activate/{transactionId} \\
+  -u "int_xxxx:ixblix_integrator_token_xxxx"`} title="cURL" />
+
+  <p>Respuesta:</p>
+  <CodeBlock language="json" code={`{
+  "company": { "id": "cmp_xxxx", "status": "ACTIVE" },
+  "apiKey": "smci_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+}`} title="Respuesta" />
+
+  <p><strong>Importante:</strong> La <code>apiKey</code> se muestra solo una vez. Almacénela de forma segura.</p>
+
+  <h2>Tipos de Cobro</h2>
+  <table>
+    <thead><tr><th>Tipo</th><th>Descripción</th></tr></thead>
+    <tbody>
+      <tr><td><code>MESSAGES</code></td><td>Cobrado por mensaje enviado o recibido.</td></tr>
+      <tr><td><code>CONVERSATIONS</code></td><td>Cobrado por conversación creada.</td></tr>
+      <tr><td><code>COMPANY</code></td><td>Tarifa fija por empresa.</td></tr>
+      <tr><td><code>TIME</code></td><td>Acceso basado en tiempo (ej: mensual).</td></tr>
+    </tbody>
+  </table>
+
+  <PageNav
+    prev={{ titleKey: 'nav.integratorRegistration', path: 'integrator-registration' }}
+    next={{ titleKey: 'nav.messaging', path: 'messaging' }}
+  />
+</DocsLayout>

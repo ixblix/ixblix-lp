@@ -1,0 +1,63 @@
+---
+import DocsLayout from '../../../layouts/DocsLayout.astro';
+import CodeBlock from '../../../components/CodeBlock.astro';
+import PageNav from '../../../components/PageNav.astro';
+import { t } from '../../../i18n';
+import type { Locale } from '../../../i18n/config';
+
+const locale: Locale = 'pt';
+---
+
+<DocsLayout>
+  <h1>{t(locale, 'nav.errors')}</h1>
+  <p class="lead">Formato de resposta de erro e códigos de erro comuns.</p>
+
+  <h2>Formato de Erro</h2>
+  <p>Todo erro inclui uma mensagem <code>error</code> e um <code>code</code>:</p>
+  <CodeBlock language="json" code={`{
+  "error": "Mensagem curta legível por humanos",
+  "code": "ERROR_CODE"
+}`} title="Resposta de erro" />
+
+  <p>Erros de validação incluem detalhes adicionais:</p>
+  <CodeBlock language="json" code={`{
+  "error": "Validação falhou",
+  "code": "VALIDATION_ERROR",
+  "errors": [
+    { "path": "/body/handle", "message": "deve ser string" }
+  ]
+}`} title="Erro de validação" />
+
+  <h2>Códigos de Erro Comuns</h2>
+  <table>
+    <thead><tr><th>Status</th><th>Código</th><th>Descrição</th></tr></thead>
+    <tbody>
+      <tr><td><code>400</code></td><td><code>VALIDATION_ERROR</code></td><td>Corpo da requisição ou parâmetros inválidos.</td></tr>
+      <tr><td><code>401</code></td><td><code>UNAUTHORIZED</code></td><td>Chave de API ausente ou inválida.</td></tr>
+      <tr><td><code>402</code></td><td><code>INSUFFICIENT_BALANCE</code></td><td>Créditos insuficientes para a operação.</td></tr>
+      <tr><td><code>402</code></td><td><code>PAYMENT_FAILED</code></td><td>Pagamento de ativação da empresa falhou.</td></tr>
+      <tr><td><code>403</code></td><td><code>FORBIDDEN</code></td><td>Empresa não está ativa.</td></tr>
+      <tr><td><code>404</code></td><td><code>NOT_FOUND</code></td><td>Recurso não existe.</td></tr>
+      <tr><td><code>409</code></td><td><code>HANDLE_IN_USE</code></td><td>Handle da empresa já registrado.</td></tr>
+      <tr><td><code>409</code></td><td><code>ALREADY_PROCESSED</code></td><td>Ativação já processada.</td></tr>
+      <tr><td><code>409</code></td><td><code>CONVERSATION_CLOSED</code></td><td>Conversa não está mais ativa.</td></tr>
+      <tr><td><code>500</code></td><td><code>INTERNAL_ERROR</code></td><td>Erro inesperado do servidor.</td></tr>
+    </tbody>
+  </table>
+
+  <h2>Tratando Erros 402</h2>
+  <p>Se receber <code>INSUFFICIENT_BALANCE</code>, o plano da empresa não cobre a ação e não há créditos pré-pagos suficientes. Compre créditos via <code>POST /api/companies/credits/purchase</code> e tente novamente.</p>
+
+  <h2>Boas Práticas</h2>
+  <ul>
+    <li>Sempre verifique o campo <code>code</code>, não o status HTTP, para tratamento programático de erros.</li>
+    <li>Registre a resposta de erro completa para depuração.</li>
+    <li>Apresente a mensagem <code>error</code> aos usuários quando apropriado.</li>
+    <li>Implemente lógica de retry com backoff exponencial para erros <code>500</code>.</li>
+  </ul>
+
+  <PageNav
+    prev={{ titleKey: 'nav.auth', path: 'auth' }}
+    next={{ titleKey: 'nav.sdk', path: 'sdk' }}
+  />
+</DocsLayout>

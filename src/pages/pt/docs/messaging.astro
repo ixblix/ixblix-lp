@@ -1,0 +1,85 @@
+---
+import DocsLayout from '../../../layouts/DocsLayout.astro';
+import CodeBlock from '../../../components/CodeBlock.astro';
+import PageNav from '../../../components/PageNav.astro';
+import { t } from '../../../i18n';
+import type { Locale } from '../../../i18n/config';
+
+const locale: Locale = 'pt';
+---
+
+<DocsLayout>
+  <h1>{t(locale, 'nav.messaging')}</h1>
+  <p class="lead">Envie e receba mensagens criptografadas ponta a ponta entre o operador e o cliente.</p>
+
+  <h2>Direções das Mensagens</h2>
+  <ol>
+    <li><strong>Empresa → Contato</strong>: enviada pela API, exibida no chat do cliente.</li>
+    <li><strong>Contato → Empresa</strong>: enviada do chat do cliente, entregue via webhook.</li>
+  </ol>
+
+  <p class="callout">Todo o conteúdo das mensagens é criptografado ponta a ponta. O backend apenas armazena e retransmite ciphertext — nunca vê o texto plano.</p>
+
+  <h2>Enviar Mensagem (Empresa)</h2>
+  <CodeBlock language="bash" code={`curl -X POST https://api.ixblix.app/api/messages/company \\
+  -H "X-API-Key: smci_xxxx" \\
+  -H "Content-Type: application/json" \\
+  -d '{
+    "conversationId": "conv_xxxx",
+    "content": "<base64 ciphertext AES-GCM>",
+    "iv": "<base64>",
+    "authTag": "<base64>",
+    "encryptedKey": "<base64 chave AES envolvida com RSA-OAEP>",
+    "selfEncryptedKey": "<base64 chave AES envolvida com RSA-OAEP>",
+    "keyId": "<id da chave do operador>"
+  }'`} title="cURL" />
+
+  <h3>Campos da Requisição</h3>
+  <table>
+    <thead><tr><th>Campo</th><th>Obrigatório</th><th>Descrição</th></tr></thead>
+    <tbody>
+      <tr><td><code>conversationId</code></td><td>Sim</td><td>ID da conversa.</td></tr>
+      <tr><td><code>content</code></td><td>Sim</td><td>Ciphertext AES-256-GCM em base64.</td></tr>
+      <tr><td><code>iv</code></td><td>Sim</td><td>Vetor de inicialização AES-GCM (base64).</td></tr>
+      <tr><td><code>authTag</code></td><td>Sim</td><td>Tag de autenticação AES-GCM (base64).</td></tr>
+      <tr><td><code>encryptedKey</code></td><td>Sim</td><td>Chave AES envolvida pela chave RSA pública do cliente.</td></tr>
+      <tr><td><code>selfEncryptedKey</code></td><td>Sim</td><td>Chave AES envolvida pela própria chave RSA do operador.</td></tr>
+      <tr><td><code>keyId</code></td><td>Sim</td><td>Identificador da chave pública do operador.</td></tr>
+      <tr><td><code>replyToId</code></td><td>Não</td><td>ID da mensagem a qual esta responde.</td></tr>
+    </tbody>
+  </table>
+
+  <h2>Enviar Mensagem (Contato)</h2>
+  <CodeBlock language="bash" code={`curl -X POST https://api.ixblix.app/api/messages/contact \\
+  -H "Content-Type: application/json" \\
+  -d '{
+    "token": "abc123def456",
+    "content": "<base64 ciphertext AES-GCM>",
+    "iv": "<base64>",
+    "authTag": "<base64>",
+    "encryptedKey": "<base64>",
+    "selfEncryptedKey": "<base64>",
+    "keyId": "<id da chave do cliente>"
+  }'`} title="cURL" />
+
+  <h2>Listar Mensagens</h2>
+  <CodeBlock language="bash" code={`curl https://api.ixblix.app/api/messages/{conversationId} \\
+  -H "X-API-Key: smci_xxxx"`} title="cURL" />
+
+  <p class="callout">Prefira webhooks ao invés de polling. O ixblix envia um webhook <code>MESSAGE_RECEIVED</code> sempre que um contato envia uma mensagem.</p>
+
+  <h2>Recibos de Leitura</h2>
+  <p>Marque uma mensagem do cliente como lida (lado do operador):</p>
+  <CodeBlock language="bash" code={`curl -X POST https://api.ixblix.app/api/messages/company/read \\
+  -H "X-API-Key: smci_xxxx" \\
+  -H "Content-Type: application/json" \\
+  -d '{ "conversationId": "conv_xxxx", "messageId": "msg_xxxx" }'`} title="cURL" />
+
+  <h2>Reações</h2>
+  <p>Reações são mensagens criptografadas com <code>contentType</code> definido como <code>react</code> e <code>replyToId</code> apontando para a mensagem alvo. Envie <code>content</code> vazio para limpar uma reação.</p>
+
+  <PageNav
+    prev={{ titleKey: 'nav.companyRegistration', path: 'company-registration' }}
+    next={{ titleKey: 'nav.webhooks', path: 'webhooks' }}
+  />
+</DocsLayout>

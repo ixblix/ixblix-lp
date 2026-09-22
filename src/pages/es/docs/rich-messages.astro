@@ -1,0 +1,80 @@
+---
+import DocsLayout from '../../../layouts/DocsLayout.astro';
+import CodeBlock from '../../../components/CodeBlock.astro';
+import PageNav from '../../../components/PageNav.astro';
+import { t } from '../../../i18n';
+import type { Locale } from '../../../i18n/config';
+
+const locale: Locale = 'es';
+---
+
+<DocsLayout>
+  <h1>{t(locale, 'nav.richMessages')}</h1>
+  <p class="lead">Envíe contenido interactivo: botones de respuesta rápida, botones de URL, copiar al portapapeles, códigos Pix, vCards y ubicaciones.</p>
+
+  <p>Solo el <strong>operador</strong> (lado de la empresa) puede enviar mensajes ricos. El cliente puede responder a ellos como texto regular.</p>
+
+  <h2>Formato de Adjuntos</h2>
+  <p>El campo <code>attachments</code> contiene una cadena JSON cifrada que describe los elementos interactivos. Cifre con la misma clave AES por mensaje usada para <code>content</code>.</p>
+  <CodeBlock language="json" code={`{
+  "buttons": [
+    { "type": "reply", "label": "Sí" },
+    { "type": "reply", "label": "No" },
+    { "type": "url", "label": "Abrir sitio", "url": "https://example.com" },
+    { "type": "copy", "label": "Copiar código", "value": "ABC-1234" },
+    { "type": "pix", "label": "Copiar Pix", "value": "00020126..." }
+  ],
+  "vcard": {
+    "name": "John Doe",
+    "phone": "+5511999998888",
+    "organization": "Acme Inc."
+  },
+  "location": {
+    "latitude": -23.5505,
+    "longitude": -46.6333,
+    "name": "São Paulo",
+    "address": "Av. Paulista, 1000"
+  }
+}`} title="JSON de adjuntos" />
+
+  <h2>Tipos de Botón</h2>
+  <table>
+    <thead><tr><th>Tipo</th><th>Campos Obligatorios</th><th>Descripción</th></tr></thead>
+    <tbody>
+      <tr><td><code>reply</code></td><td><code>label</code></td><td>Botón de respuesta rápida. Envía el texto del label como respuesta.</td></tr>
+      <tr><td><code>url</code></td><td><code>label</code>, <code>url</code></td><td>Abre la URL en el navegador.</td></tr>
+      <tr><td><code>copy</code></td><td><code>label</code>, <code>value</code></td><td>Copia el valor al portapapeles.</td></tr>
+      <tr><td><code>pix</code></td><td><code>label</code>, <code>value</code></td><td>Igual que copy, pero con ícono de Pix.</td></tr>
+    </tbody>
+  </table>
+
+  <h2>Reglas de Renderizado</h2>
+  <ul>
+    <li><strong>Hasta 3 botones</strong>: se renderizan inline debajo del mensaje.</li>
+    <li><strong>Más de 3</strong>: se renderiza un botón "Más" que abre un modal.</li>
+    <li><strong>Ubicación</strong>: renderiza nombre/dirección con enlace para abrir en app de mapas.</li>
+    <li><strong>vCard</strong>: renderiza una tarjeta de contacto con nombre, teléfono y organización.</li>
+  </ul>
+
+  <h2>Enviando un Mensaje Rico</h2>
+  <CodeBlock language="bash" code={`curl -X POST https://api.ixblix.app/api/messages/company \\
+  -H "X-API-Key: smci_xxxx" \\
+  -H "Content-Type: application/json" \\
+  -d '{
+    "conversationId": "conv_xxxx",
+    "content": "<texto cifrado>",
+    "iv": "...",
+    "authTag": "...",
+    "encryptedKey": "...",
+    "selfEncryptedKey": "...",
+    "keyId": "...",
+    "attachments": "<cadena JSON cifrada>"
+  }'`} title="cURL" />
+
+  <p>El backend almacena el ciphertext tal cual. Nunca descifra ni inspecciona los adjuntos.</p>
+
+  <PageNav
+    prev={{ titleKey: 'nav.e2eEncryption', path: 'e2e-encryption' }}
+    next={{ titleKey: 'nav.media', path: 'media' }}
+  />
+</DocsLayout>

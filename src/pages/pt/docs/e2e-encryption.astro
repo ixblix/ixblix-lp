@@ -1,0 +1,79 @@
+---
+import DocsLayout from '../../../layouts/DocsLayout.astro';
+import CodeBlock from '../../../components/CodeBlock.astro';
+import PageNav from '../../../components/PageNav.astro';
+import { t } from '../../../i18n';
+import type { Locale } from '../../../i18n/config';
+
+const locale: Locale = 'pt';
+---
+
+<DocsLayout>
+  <h1>{t(locale, 'nav.e2eEncryption')}</h1>
+  <p class="lead">Criptografia híbrida RSA + AES-256-GCM. Mensagens são criptografadas no cliente — o servidor nunca vê o texto plano.</p>
+
+  <h2>Modelo de Ameaça</h2>
+  <p><strong>Confiáveis:</strong> O operador (desk/CRM) e o cliente. Cada um possui sua própria chave privada.</p>
+  <p><strong>Não confiáveis:</strong> O backend do ixblix, banco de dados e atacantes de rede. O backend nunca possui uma chave privada e nunca vê texto plano.</p>
+
+  <h3>O que NÃO é protegido</h3>
+  <ul>
+    <li><strong>Metadados</strong>: quem fala com quem, quando e quantas mensagens.</li>
+    <li><strong>Armazenamento do operador</strong>: o operador é responsável por proteger sua chave privada.</li>
+    <li><strong>Dispositivo do cliente</strong>: se comprometido, a chave privada pode ser roubada.</li>
+  </ul>
+
+  <h2>Esquema Criptográfico</h2>
+  <table>
+    <thead><tr><th>Propósito</th><th>Algoritmo</th><th>Parâmetros</th></tr></thead>
+    <tbody>
+      <tr><td>Envelope de chave</td><td>RSA-OAEP</td><td>2048-bit, SHA-256</td></tr>
+      <tr><td>Conteúdo da mensagem</td><td>AES-256-GCM</td><td>Chave 256-bit, IV 96-bit, tag 128-bit</td></tr>
+    </tbody>
+  </table>
+
+  <p>Cada mensagem usa uma chave <strong>nova</strong> AES-256-GCM. Essa chave AES é então envolvida (criptografada) pela chave pública RSA do destinatário. Isso fornece forward secrecy entre mensagens.</p>
+
+  <h2>Auto-Leitura</h2>
+  <p>A chave AES de cada mensagem é envolvida <strong>duas vezes</strong>: uma para o destinatário e uma para a própria chave pública do remetente. Isso permite que cada lado leia suas próprias mensagens enviadas.</p>
+
+  <h2>Envelope da Mensagem</h2>
+  <table>
+    <thead><tr><th>Campo</th><th>Descrição</th></tr></thead>
+    <tbody>
+      <tr><td><code>content</code></td><td>Ciphertext AES-256-GCM (base64).</td></tr>
+      <tr><td><code>iv</code></td><td>Vetor de inicialização AES-GCM de 96 bits (base64).</td></tr>
+      <tr><td><code>authTag</code></td><td>Tag de autenticação AES-GCM de 128 bits (base64).</td></tr>
+      <tr><td><code>encryptedKey</code></td><td>Chave AES envolvida pela chave RSA pública do destinatário.</td></tr>
+      <tr><td><code>selfEncryptedKey</code></td><td>Chave AES envolvida pela própria chave RSA do remetente.</td></tr>
+      <tr><td><code>keyId</code></td><td>Identificador da chave pública do remetente.</td></tr>
+    </tbody>
+  </table>
+
+  <h2>Fluxo de Troca de Chaves</h2>
+  <ol>
+    <li>O operador gera um par de chaves RSA persistente e registra a chave pública via <code>PUT /api/companies/encryption-key</code>.</li>
+    <li>O operador cria uma conversa. O backend faz snapshot da chave ativa da empresa.</li>
+    <li>O cliente abre o deeplink. O navegador gera um par de chaves RSA. A chave privada fica no IndexedDB.</li>
+    <li>O cliente registra a chave pública via <code>POST /api/conversations/{"{token}"}/key</code>.</li>
+    <li>O ixblix envia um webhook <code>CUSTOMER_JOINED</code> com a chave pública do cliente.</li>
+    <li>Ambos os lados agora podem criptografar mensagens um para o outro.</li>
+  </ol>
+
+  <h2>Exemplo de Criptografia</h2>
+  <CodeBlock language="typescript" code={`import { encryptToRecipient } from '@ixblix/sdk-js';
+
+const encrypted = encryptToRecipient({
+  plaintext: 'Olá da Acme Corp!',
+  recipientPublicKey: customerPublicKey,
+  senderPublicKey: operatorKey.publicKey,
+});
+
+// encrypted.content — ciphertext em base64
+// encrypted.key — chave AES envolvida em base64`} title="TypeScript (SDK)" />
+
+  <PageNav
+    prev={{ titleKey: 'nav.webhooks', path: 'webhooks' }}
+    next={{ titleKey: 'nav.richMessages', path: 'rich-messages' }}
+  />
+</DocsLayout>

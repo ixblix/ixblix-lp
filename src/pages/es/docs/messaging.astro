@@ -1,0 +1,85 @@
+---
+import DocsLayout from '../../../layouts/DocsLayout.astro';
+import CodeBlock from '../../../components/CodeBlock.astro';
+import PageNav from '../../../components/PageNav.astro';
+import { t } from '../../../i18n';
+import type { Locale } from '../../../i18n/config';
+
+const locale: Locale = 'es';
+---
+
+<DocsLayout>
+  <h1>{t(locale, 'nav.messaging')}</h1>
+  <p class="lead">Envíe y reciba mensajes cifrados de extremo a extremo entre el operador y el cliente.</p>
+
+  <h2>Direcciones de Mensajes</h2>
+  <ol>
+    <li><strong>Empresa → Contacto</strong>: enviada por la API, mostrada en el chat del cliente.</li>
+    <li><strong>Contacto → Empresa</strong>: enviada desde el chat del cliente, entregada vía webhook.</li>
+  </ol>
+
+  <p class="callout">Todo el contenido de los mensajes está cifrado de extremo a extremo. El backend solo almacena y retransmite ciphertext — nunca ve el texto plano.</p>
+
+  <h2>Enviar Mensaje (Empresa)</h2>
+  <CodeBlock language="bash" code={`curl -X POST https://api.ixblix.app/api/messages/company \\
+  -H "X-API-Key: smci_xxxx" \\
+  -H "Content-Type: application/json" \\
+  -d '{
+    "conversationId": "conv_xxxx",
+    "content": "<base64 ciphertext AES-GCM>",
+    "iv": "<base64>",
+    "authTag": "<base64>",
+    "encryptedKey": "<base64 clave AES envuelta con RSA-OAEP>",
+    "selfEncryptedKey": "<base64 clave AES envuelta con RSA-OAEP>",
+    "keyId": "<id de clave del operador>"
+  }'`} title="cURL" />
+
+  <h3>Campos de la Solicitud</h3>
+  <table>
+    <thead><tr><th>Campo</th><th>Obligatorio</th><th>Descripción</th></tr></thead>
+    <tbody>
+      <tr><td><code>conversationId</code></td><td>Sí</td><td>ID de la conversación.</td></tr>
+      <tr><td><code>content</code></td><td>Sí</td><td>Ciphertext AES-256-GCM en base64.</td></tr>
+      <tr><td><code>iv</code></td><td>Sí</td><td>Vector de inicialización AES-GCM (base64).</td></tr>
+      <tr><td><code>authTag</code></td><td>Sí</td><td>Tag de autenticación AES-GCM (base64).</td></tr>
+      <tr><td><code>encryptedKey</code></td><td>Sí</td><td>Clave AES envuelta por la clave RSA pública del cliente.</td></tr>
+      <tr><td><code>selfEncryptedKey</code></td><td>Sí</td><td>Clave AES envuelta por la propia clave RSA del operador.</td></tr>
+      <tr><td><code>keyId</code></td><td>Sí</td><td>Identificador de la clave pública del operador.</td></tr>
+      <tr><td><code>replyToId</code></td><td>No</td><td>ID del mensaje al que este responde.</td></tr>
+    </tbody>
+  </table>
+
+  <h2>Enviar Mensaje (Contacto)</h2>
+  <CodeBlock language="bash" code={`curl -X POST https://api.ixblix.app/api/messages/contact \\
+  -H "Content-Type: application/json" \\
+  -d '{
+    "token": "abc123def456",
+    "content": "<base64 ciphertext AES-GCM>",
+    "iv": "<base64>",
+    "authTag": "<base64>",
+    "encryptedKey": "<base64>",
+    "selfEncryptedKey": "<base64>",
+    "keyId": "<id de clave del cliente>"
+  }'`} title="cURL" />
+
+  <h2>Listar Mensajes</h2>
+  <CodeBlock language="bash" code={`curl https://api.ixblix.app/api/messages/{conversationId} \\
+  -H "X-API-Key: smci_xxxx"`} title="cURL" />
+
+  <p class="callout">Prefiera webhooks en lugar de polling. ixblix envía un webhook <code>MESSAGE_RECEIVED</code> cada vez que un contacto envía un mensaje.</p>
+
+  <h2>Acuses de Lectura</h2>
+  <p>Marque un mensaje del cliente como leído (lado del operador):</p>
+  <CodeBlock language="bash" code={`curl -X POST https://api.ixblix.app/api/messages/company/read \\
+  -H "X-API-Key: smci_xxxx" \\
+  -H "Content-Type: application/json" \\
+  -d '{ "conversationId": "conv_xxxx", "messageId": "msg_xxxx" }'`} title="cURL" />
+
+  <h2>Reacciones</h2>
+  <p>Las reacciones son mensajes cifrados con <code>contentType</code> establecido en <code>react</code> y <code>replyToId</code> apuntando al mensaje objetivo. Envíe <code>content</code> vacío para limpiar una reacción.</p>
+
+  <PageNav
+    prev={{ titleKey: 'nav.companyRegistration', path: 'company-registration' }}
+    next={{ titleKey: 'nav.webhooks', path: 'webhooks' }}
+  />
+</DocsLayout>

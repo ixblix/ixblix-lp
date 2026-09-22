@@ -1,0 +1,40 @@
+---
+interface Props {
+  code: string;
+  language: string;
+  title?: string;
+}
+
+import { t, getLocaleFromUrl } from '../i18n';
+import type { Locale } from '../i18n/config';
+
+const { code, language, title } = Astro.props;
+const locale = getLocaleFromUrl(Astro.url) as Locale;
+const copyLabel = t(locale, 'common.copy');
+const copiedLabel = t(locale, 'common.copied');
+---
+
+<div class="code-block-wrapper">
+  <div class="code-block-header">
+    <span>{title ?? language}</span>
+    <button class="code-block-copy" type="button" data-copy={copyLabel} data-copied={copiedLabel}>
+      {copyLabel}
+    </button>
+  </div>
+  <pre><code class={`language-${language}`}>{code}</code></pre>
+</div>
+
+<script>
+  document.querySelectorAll('.code-block-copy').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const pre = btn.closest('.code-block-wrapper')?.querySelector('pre code');
+      if (!pre) return;
+      const text = pre.textContent ?? '';
+      navigator.clipboard.writeText(text).then(() => {
+        const original = btn.textContent;
+        btn.textContent = (btn as HTMLElement).dataset.copied ?? 'Copied!';
+        setTimeout(() => { btn.textContent = original; }, 2000);
+      });
+    });
+  });
+</script>

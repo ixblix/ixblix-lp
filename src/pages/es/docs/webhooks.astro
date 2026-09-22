@@ -1,0 +1,81 @@
+---
+import DocsLayout from '../../../layouts/DocsLayout.astro';
+import CodeBlock from '../../../components/CodeBlock.astro';
+import PageNav from '../../../components/PageNav.astro';
+import { t } from '../../../i18n';
+import type { Locale } from '../../../i18n/config';
+
+const locale: Locale = 'es';
+---
+
+<DocsLayout>
+  <h1>{t(locale, 'nav.webhooks')}</h1>
+  <p class="lead">Reciba eventos en tiempo real vía webhooks firmados. Mensajes, presencia, acuses de lectura — todo entregado a su endpoint.</p>
+
+  <h2>Configurar URL del Webhook</h2>
+  <CodeBlock language="bash" code={`curl -X PUT https://api.ixblix.app/api/companies/webhook \\
+  -H "X-API-Key: smci_xxxx" \\
+  -H "Content-Type: application/json" \\
+  -d '{ "url": "https://mycrm.example.com/ixblix/webhooks" }'`} title="cURL" />
+
+  <p>La respuesta incluye el <code>webhookSecret</code> para verificar firmas. Almacénelo de forma segura — se devuelve <strong>solo una vez</strong>.</p>
+
+  <h2>Eventos</h2>
+  <table>
+    <thead><tr><th>Evento</th><th>Cuándo se dispara</th></tr></thead>
+    <tbody>
+      <tr><td><code>COMPANY_ACTIVATED</code></td><td>Empresa activada después del pago.</td></tr>
+      <tr><td><code>MESSAGE_RECEIVED</code></td><td>Un contacto envió un mensaje.</td></tr>
+      <tr><td><code>MESSAGE_READ</code></td><td>El cliente leyó un mensaje de la empresa.</td></tr>
+      <tr><td><code>CUSTOMER_JOINED</code></td><td>El cliente abrió el enlace y registró la clave pública.</td></tr>
+      <tr><td><code>CONVERSATION_CLOSED</code></td><td>Una conversación fue cerrada.</td></tr>
+      <tr><td><code>TYPING</code></td><td>El cliente está escribiendo.</td></tr>
+      <tr><td><code>STOPPED_TYPING</code></td><td>El cliente dejó de escribir.</td></tr>
+      <tr><td><code>RECORDING</code></td><td>El cliente está grabando audio.</td></tr>
+      <tr><td><code>CHAT_CLOSED</code></td><td>El cliente cerró la ventana del chat.</td></tr>
+      <tr><td><code>BALANCE_LOW</code></td><td>El saldo de créditos de la empresa está bajo.</td></tr>
+    </tbody>
+  </table>
+
+  <h2>Ejemplo de Payload</h2>
+  <CodeBlock language="json" code={`{
+  "event": "MESSAGE_RECEIVED",
+  "companyId": "660f9511-...",
+  "conversationId": "880fc844-...",
+  "messageId": "bb1if177-...",
+  "sentAt": "2026-09-06T12:00:00.000Z"
+}`} title="MESSAGE_RECEIVED" />
+
+  <h2>Verificando Firmas</h2>
+  <p>Los payloads de webhook están firmados con HMAC-SHA256. La firma está en el header <code>X-Ixblix-Signature</code>.</p>
+  <CodeBlock language="typescript" code={`import { verifyWebhook, WEBHOOK_SIGNATURE_HEADER } from "@ixblix/sdk-js";
+
+const signature = req.header(WEBHOOK_SIGNATURE_HEADER);
+const { event } = verifyWebhook(
+  req.body,
+  process.env.IXBLIX_WEBHOOK_SECRET,
+  signature,
+);`} title="TypeScript" />
+
+  <h2>Garantías de Entrega</h2>
+  <ul>
+    <li>La entrega es <strong>at-least-once</strong>. Deduplique por <code>X-Ixblix-Event-Id</code>.</li>
+    <li>Los fallos se reintentan con backoff exponencial (hasta 8 intentos).</li>
+    <li>Responda <code>2xx</code> rápidamente. ixblix expira después de 10 segundos.</li>
+  </ul>
+
+  <h2>Headers</h2>
+  <table>
+    <thead><tr><th>Header</th><th>Descripción</th></tr></thead>
+    <tbody>
+      <tr><td><code>X-Ixblix-Signature</code></td><td>Firma HMAC-SHA256.</td></tr>
+      <tr><td><code>X-Ixblix-Event-Id</code></td><td>ID único de entrega (para dedup).</td></tr>
+      <tr><td><code>X-Ixblix-Event</code></td><td>Tipo del evento.</td></tr>
+    </tbody>
+  </table>
+
+  <PageNav
+    prev={{ titleKey: 'nav.messaging', path: 'messaging' }}
+    next={{ titleKey: 'nav.e2eEncryption', path: 'e2e-encryption' }}
+  />
+</DocsLayout>

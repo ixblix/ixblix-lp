@@ -1,0 +1,136 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { t } from '../../i18n';
+import { locales, localeNames } from '../../i18n/config';
+
+const locale = 'es';
+---
+
+<BaseLayout title="ixblix — Documentación para Desarrolladores" locale={locale}>
+  <div class="home-page">
+    <div class="home-lang-bar">
+      <div class="home-lang-switcher">
+        {locales.map((l) => (
+          <a
+            href={l === 'en' ? '/' : `/${l}`}
+            class={`home-lang-btn ${locale === l ? 'active' : ''}`}
+          >
+            {localeNames[l]}
+          </a>
+        ))}
+      </div>
+    </div>
+
+    <section class="home-hero">
+      <h1 class="home-hero-brand">ixblix</h1>
+      <p class="home-hero-tagline">{t(locale, 'home.tagline')}</p>
+      <div class="home-hero-actions">
+        <a href="/es/docs/quickstart" class="btn btn-primary">{t(locale, 'home.cta.start')}</a>
+        <a href="https://dev.ixblix.app" class="btn btn-outline" target="_blank" rel="noopener noreferrer">{t(locale, 'home.cta.api')}</a>
+      </div>
+    </section>
+
+    <section class="home-features">
+      <h2 class="home-features-title">{t(locale, 'home.features.title')}</h2>
+      <div class="home-features-grid">
+        <div class="home-feature-card">
+          <div class="home-feature-icon">🔐</div>
+          <h3>{t(locale, 'home.features.e2ee.title')}</h3>
+          <p>{t(locale, 'home.features.e2ee.desc')}</p>
+        </div>
+        <div class="home-feature-card">
+          <div class="home-feature-icon">🔗</div>
+          <h3>{t(locale, 'home.features.webhooks.title')}</h3>
+          <p>{t(locale, 'home.features.webhooks.desc')}</p>
+        </div>
+        <div class="home-feature-card">
+          <div class="home-feature-icon">🎨</div>
+          <h3>{t(locale, 'home.features.whitelabel.title')}</h3>
+          <p>{t(locale, 'home.features.whitelabel.desc')}</p>
+        </div>
+        <div class="home-feature-card">
+          <div class="home-feature-icon">💬</div>
+          <h3>{t(locale, 'home.features.rich.title')}</h3>
+          <p>{t(locale, 'home.features.rich.desc')}</p>
+        </div>
+        <div class="home-feature-card">
+          <div class="home-feature-icon">📱</div>
+          <h3>{t(locale, 'home.features.multiplatform.title')}</h3>
+          <p>{t(locale, 'home.features.multiplatform.desc')}</p>
+        </div>
+        <div class="home-feature-card">
+          <div class="home-feature-icon">📦</div>
+          <h3>{t(locale, 'home.features.sdk.title')}</h3>
+          <p>{t(locale, 'home.features.sdk.desc')}</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="home-cta">
+      <h2>{t(locale, 'home.ctaSection.title')}</h2>
+      <p>{t(locale, 'home.ctaSection.desc')}</p>
+      <a href="/es/docs/quickstart" class="btn btn-primary">{t(locale, 'home.ctaSection.button')}</a>
+    </section>
+
+    <section class="home-skills">
+      <h2 class="home-skills-title">{t(locale, 'home.skills.title')}</h2>
+      <p class="home-skills-desc">{t(locale, 'home.skills.desc')}</p>
+      <div class="home-skills-grid">
+        <div class="home-skill-card">
+          <div class="home-skill-icon">🔌</div>
+          <h3>{t(locale, 'home.skills.api.title')}</h3>
+          <p>{t(locale, 'home.skills.api.desc')}</p>
+          <a href="/skills/ixblix-api-integration.md" class="btn btn-outline-dark" download>{t(locale, 'home.skills.api.download')}</a>
+        </div>
+        <div class="home-skill-card">
+          <div class="home-skill-icon">📦</div>
+          <h3>{t(locale, 'home.skills.sdk.title')}</h3>
+          <p>{t(locale, 'home.skills.sdk.desc')}</p>
+          <a href="/skills/ixblix-sdk-integration.md" class="btn btn-outline-dark" download>{t(locale, 'home.skills.sdk.download')}</a>
+        </div>
+      </div>
+      <div class="home-skills-instructions">
+        <h3>{t(locale, 'home.skills.instructions.title')}</h3>
+        <div class="home-skill-instruction-item">
+          <h4>{t(locale, 'home.skills.instructions.claude.title')}</h4>
+          <ol>
+            <li>{t(locale, 'home.skills.instructions.claude.step1')}</li>
+            <li>{t(locale, 'home.skills.instructions.claude.step2')}</li>
+            <li>{t(locale, 'home.skills.instructions.claude.step3')}</li>
+            <li>{t(locale, 'home.skills.instructions.claude.step4')}</li>
+            <li>{t(locale, 'home.skills.instructions.claude.step5')}</li>
+            <li>{t(locale, 'home.skills.instructions.claude.step6')}</li>
+          </ol>
+        </div>
+        <div class="home-skill-instruction-item">
+          <h4>{t(locale, 'home.skills.instructions.chatgpt.title')}</h4>
+          <ol>
+            <li>{t(locale, 'home.skills.instructions.chatgpt.step1')}</li>
+            <li>{t(locale, 'home.skills.instructions.chatgpt.step2')}</li>
+            <li>{t(locale, 'home.skills.instructions.chatgpt.step3')}</li>
+            <li>{t(locale, 'home.skills.instructions.chatgpt.step4')}</li>
+            <li>{t(locale, 'home.skills.instructions.chatgpt.step5')}</li>
+          </ol>
+        </div>
+        <div class="home-skill-instruction-item">
+          <h4 set:html={t(locale, 'home.skills.instructions.copilot.title')}></h4>
+          <ol>
+            <li>{t(locale, 'home.skills.instructions.copilot.step1')}</li>
+            <li set:html={t(locale, 'home.skills.instructions.copilot.step2')}></li>
+            <li set:html={t(locale, 'home.skills.instructions.copilot.step3')}></li>
+            <li>{t(locale, 'home.skills.instructions.copilot.step4')}</li>
+          </ol>
+        </div>
+        <div class="home-skill-instruction-item">
+          <h4>{t(locale, 'home.skills.instructions.cursor.title')}</h4>
+          <ol>
+            <li>{t(locale, 'home.skills.instructions.cursor.step1')}</li>
+            <li set:html={t(locale, 'home.skills.instructions.cursor.step2')}></li>
+            <li>{t(locale, 'home.skills.instructions.cursor.step3')}</li>
+            <li>{t(locale, 'home.skills.instructions.cursor.step4')}</li>
+          </ol>
+        </div>
+      </div>
+    </section>
+  </div>
+</BaseLayout>

@@ -1,0 +1,79 @@
+---
+import DocsLayout from '../../layouts/DocsLayout.astro';
+import CodeBlock from '../../components/CodeBlock.astro';
+import PageNav from '../../components/PageNav.astro';
+import { t } from '../../i18n';
+import type { Locale } from '../../i18n/config';
+
+const locale: Locale = 'en';
+---
+
+<DocsLayout>
+  <h1>{t(locale, 'nav.e2eEncryption')}</h1>
+  <p class="lead">Hybrid RSA + AES-256-GCM encryption. Messages are encrypted client-side — the server never sees plaintext.</p>
+
+  <h2>Threat Model</h2>
+  <p><strong>Trusted:</strong> The operator (desk/CRM) and the customer. Each holds their own private key.</p>
+  <p><strong>Not trusted:</strong> The SMCI backend, database, and network attackers. The backend never holds a private key and never sees plaintext.</p>
+
+  <h3>What is NOT protected</h3>
+  <ul>
+    <li><strong>Metadata</strong>: who talks to whom, when, and message count.</li>
+    <li><strong>Operator's own storage</strong>: the operator is responsible for protecting its private key.</li>
+    <li><strong>Customer's device</strong>: if compromised, the private key can be stolen.</li>
+  </ul>
+
+  <h2>Cryptographic Scheme</h2>
+  <table>
+    <thead><tr><th>Purpose</th><th>Algorithm</th><th>Parameters</th></tr></thead>
+    <tbody>
+      <tr><td>Key wrapping</td><td>RSA-OAEP</td><td>2048-bit, SHA-256</td></tr>
+      <tr><td>Message content</td><td>AES-256-GCM</td><td>256-bit key, 96-bit IV, 128-bit tag</td></tr>
+    </tbody>
+  </table>
+
+  <p>Each message uses a <strong>fresh</strong> AES-256-GCM key. That AES key is wrapped (encrypted) to the recipient's RSA public key. This provides forward secrecy between messages.</p>
+
+  <h2>Self-Read</h2>
+  <p>Each message's AES key is wrapped <strong>twice</strong>: once to the recipient and once to the sender's own public key. This lets each side read back its own sent messages.</p>
+
+  <h2>Message Envelope</h2>
+  <table>
+    <thead><tr><th>Field</th><th>Description</th></tr></thead>
+    <tbody>
+      <tr><td><code>content</code></td><td>AES-256-GCM ciphertext (base64).</td></tr>
+      <tr><td><code>iv</code></td><td>96-bit AES-GCM initialization vector (base64).</td></tr>
+      <tr><td><code>authTag</code></td><td>128-bit AES-GCM authentication tag (base64).</td></tr>
+      <tr><td><code>encryptedKey</code></td><td>AES key wrapped to recipient's RSA public key.</td></tr>
+      <tr><td><code>selfEncryptedKey</code></td><td>AES key wrapped to sender's own RSA public key.</td></tr>
+      <tr><td><code>keyId</code></td><td>Identifier of the sender's public key.</td></tr>
+    </tbody>
+  </table>
+
+  <h2>Key Exchange Flow</h2>
+  <ol>
+    <li>Operator generates a persistent RSA keypair and registers the public key via <code>PUT /api/companies/encryption-key</code>.</li>
+    <li>Operator creates a conversation. The backend snapshots the company's active key.</li>
+    <li>Customer opens the deeplink. The browser generates an RSA keypair. The private key stays in IndexedDB.</li>
+    <li>Customer registers the public key via <code>POST /api/conversations/{"{token}"}/key</code>.</li>
+    <li>SMCI pushes a <code>CUSTOMER_JOINED</code> webhook with the customer's public key.</li>
+    <li>Both sides can now encrypt messages to each other.</li>
+  </ol>
+
+  <h2>Encryption Example</h2>
+  <CodeBlock language="typescript" code={`import { encryptToRecipient } from '@ixblix/sdk-js';
+
+const encrypted = encryptToRecipient({
+  plaintext: 'Hello from Acme Corp!',
+  recipientPublicKey: customerPublicKey,
+  senderPublicKey: operatorKey.publicKey,
+});
+
+// encrypted.content — base64 ciphertext
+// encrypted.key — base64 wrapped AES key`} title="TypeScript (SDK)" />
+
+  <PageNav
+    prev={{ titleKey: 'nav.webhooks', path: 'webhooks' }}
+    next={{ titleKey: 'nav.richMessages', path: 'rich-messages' }}
+  />
+</DocsLayout>

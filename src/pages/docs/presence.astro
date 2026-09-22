@@ -1,0 +1,65 @@
+---
+import DocsLayout from '../../layouts/DocsLayout.astro';
+import CodeBlock from '../../components/CodeBlock.astro';
+import PageNav from '../../components/PageNav.astro';
+import { t } from '../../i18n';
+import type { Locale } from '../../i18n/config';
+
+const locale: Locale = 'en';
+---
+
+<DocsLayout>
+  <h1>{t(locale, 'nav.presence')}</h1>
+  <p class="lead">Real-time presence indicators: typing, recording, and chat status.</p>
+
+  <h2>Overview</h2>
+  <p>Presence events are best-effort, high-frequency metadata signals. Treat them as transient UI hints, not as durable state.</p>
+
+  <h2>Report Presence (Company → Customer)</h2>
+  <p>The operator reports presence via Socket.io. The customer's chat shows "typing..." or "recording..." indicators.</p>
+  <CodeBlock language="bash" code={`curl -X POST https://api.ixblix.app/api/conversations/{conversationId}/presence \\
+  -H "X-API-Key: smci_xxxx" \\
+  -H "Content-Type: application/json" \\
+  -d '{ "type": "typing" }'`} title="cURL" />
+
+  <p>Valid types: <code>typing</code>, <code>recording</code>, <code>stopped</code>.</p>
+
+  <h2>Report Presence (Customer → Operator)</h2>
+  <p>The customer's chat app reports presence. The operator receives webhooks.</p>
+  <CodeBlock language="bash" code={`curl -X POST https://api.ixblix.app/api/conversations/{token}/presence \\
+  -H "Content-Type: application/json" \\
+  -d '{ "type": "typing" }'`} title="cURL" />
+
+  <p>Uses the conversation token (deeplink token) instead of API key.</p>
+
+  <h2>Webhook Events</h2>
+  <table>
+    <thead><tr><th>Event</th><th>Description</th></tr></thead>
+    <tbody>
+      <tr><td><code>TYPING</code></td><td>Customer started typing.</td></tr>
+      <tr><td><code>STOPPED_TYPING</code></td><td>Customer stopped typing without sending.</td></tr>
+      <tr><td><code>RECORDING</code></td><td>Customer is recording an audio message.</td></tr>
+      <tr><td><code>CHAT_CLOSED</code></td><td>Customer closed the chat window.</td></tr>
+    </tbody>
+  </table>
+
+  <h2>Webhook Payload</h2>
+  <CodeBlock language="json" code={`{
+  "event": "TYPING",
+  "companyId": "660f9511-...",
+  "conversationId": "880fc844-...",
+  "type": "typing"
+}`} title="TYPING webhook" />
+
+  <h2>Socket.io Events (Customer Side)</h2>
+  <p>The customer web app listens for these Socket.io events:</p>
+  <ul>
+    <li><code>presence</code> — operator typing/recording indicator.</li>
+    <li><code>message_read</code> — operator read a customer message.</li>
+  </ul>
+
+  <PageNav
+    prev={{ titleKey: 'nav.media', path: 'media' }}
+    next={{ titleKey: 'nav.keyTransfer', path: 'key-transfer' }}
+  />
+</DocsLayout>

@@ -1,0 +1,36 @@
+---
+interface Props {
+  prev?: { titleKey: string; path: string };
+  next?: { titleKey: string; path: string };
+}
+
+import { t, getLocaleFromUrl } from '../i18n';
+import type { Locale } from '../i18n/config';
+
+const { prev, next } = Astro.props;
+const locale = getLocaleFromUrl(Astro.url) as Locale;
+
+function localizedPath(slug: string, loc: Locale): string {
+  if (loc === 'en') return `/docs/${slug}`;
+  return `/${loc}/docs/${slug}`;
+}
+---
+
+<div class="page-nav">
+  {prev ? (
+    <a href={localizedPath(prev.path, locale)} class="page-nav-link">
+      <span class="page-nav-label">{t(locale, 'common.prev')}</span>
+      <span class="page-nav-title">{t(locale, prev.titleKey)}</span>
+    </a>
+  ) : (
+    <div />
+  )}
+  {next ? (
+    <a href={localizedPath(next.path, locale)} class="page-nav-link next">
+      <span class="page-nav-label">{t(locale, 'common.next')}</span>
+      <span class="page-nav-title">{t(locale, next.titleKey)}</span>
+    </a>
+  ) : (
+    <div />
+  )}
+</div>

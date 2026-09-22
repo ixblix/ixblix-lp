@@ -1,0 +1,86 @@
+---
+import DocsLayout from '../../../layouts/DocsLayout.astro';
+import CodeBlock from '../../../components/CodeBlock.astro';
+import PageNav from '../../../components/PageNav.astro';
+import { t } from '../../../i18n';
+import type { Locale } from '../../../i18n/config';
+
+const locale: Locale = 'pt';
+---
+
+<DocsLayout>
+  <h1>{t(locale, 'nav.keyTransfer')}</h1>
+  <p class="lead">Transfira o par de chaves E2EE do cliente do PWA para um app nativo no mesmo dispositivo.</p>
+
+  <h2>Problema</h2>
+  <p>A chave privada do cliente fica no IndexedDB do PWA. Quando o usuário instala o app nativo, o app não tem chave e geraria uma nova, tornando toda mensagem envolvida para a chave antiga indecifrável.</p>
+  <p>Não há <strong>canal direto</strong> entre o PWA e o app. O payload deve viajar pelo backend, criptografado com um segredo que o backend nunca vê.</p>
+
+  <h2>Modelo de Segurança</h2>
+  <p>A propriedade de segurança é <strong>separação de canais</strong>:</p>
+  <ul>
+    <li>O ciphertext viaja por HTTPS (backend vê, mas não pode descriptografar).</li>
+    <li>O PIN viaja pelos olhos e dedos do usuário (nunca enviado ao servidor).</li>
+  </ul>
+
+  <table>
+    <thead><tr><th>Parte</th><th>Vê</th><th>Não vê</th></tr></thead>
+    <tbody>
+      <tr><td>Backend / DB</td><td>transferId, ciphertext, iv, salt</td><td>PIN, par de chaves em texto plano</td></tr>
+      <tr><td>Atacante de rede</td><td>Mesmo que o backend</td><td>PIN</td></tr>
+      <tr><td>Outro app</td><td>Nada</td><td>PIN</td></tr>
+    </tbody>
+  </table>
+
+  <h2>Parâmetros Criptográficos</h2>
+  <table>
+    <thead><tr><th>Propósito</th><th>Algoritmo</th><th>Parâmetros</th></tr></thead>
+    <tbody>
+      <tr><td>PIN → KEK</td><td>PBKDF2-SHA256</td><td>200.000 iterações, salt aleatório de 16 bytes</td></tr>
+      <tr><td>Criptografia do payload</td><td>AES-256-GCM</td><td>Chave 256-bit, IV 96-bit, tag 128-bit</td></tr>
+    </tbody>
+  </table>
+
+  <h2>Proteção do PIN</h2>
+  <p>Um PIN de 6 dígitos tem ~20 bits de entropia. É seguro porque:</p>
+  <ul>
+    <li><strong>TTL curto</strong> (5 minutos) na entrada do Redis.</li>
+    <li><strong>Limite de tentativas</strong> (5 tentativas, depois a entrada é destruída).</li>
+    <li><strong>Recuperação única</strong> (GET deleta a entrada).</li>
+  </ul>
+
+  <h2>Fluxo</h2>
+  <ol>
+    <li>Cliente de origem (PWA) lê o par de chaves do IndexedDB.</li>
+    <li>Payload é JSON → deflate → AES-256-GCM(KEK) com KEK derivada do PIN.</li>
+    <li>PIN é gerado localmente, <strong>nunca enviado ao servidor</strong>.</li>
+    <li>Payload criptografado é enviado: <code>POST /api/key-transfer</code>.</li>
+    <li>Backend retorna <code>transferId</code> e <code>expiresAt</code>.</li>
+    <li>PWA mostra PIN + link da loja para o usuário.</li>
+    <li>Usuário instala e abre o app, digita o PIN.</li>
+    <li>App busca: <code>GET /api/key-transfer/{"{transferId}"}</code>.</li>
+    <li>App deriva KEK, descriptografa, valida, armazena em secure storage.</li>
+    <li>App confirma: <code>POST /api/key-transfer/{"{transferId}"}/confirm</code>.</li>
+  </ol>
+
+  <h2>Formato do Payload</h2>
+  <CodeBlock language="json" code={`{
+  "v": 1,
+  "keyId": "a3f9...",
+  "publicKeySpki": "MIIBIjANBgkq...",
+  "privateKeyPkcs8": "MIIEvQIBADANBgkq..."
+}`} title="Payload da chave" />
+
+  <h2>Envelope no Backend</h2>
+  <CodeBlock language="json" code={`{
+  "ciphertext": "8f3a...",
+  "iv": "9c2b...",
+  "salt": "1d4e...",
+  "kdf": { "alg": "PBKDF2-SHA256", "iterations": 200000 }
+}`} title="Envelope armazenado" />
+
+  <PageNav
+    prev={{ titleKey: 'nav.presence', path: 'presence' }}
+    next={{ titleKey: 'nav.auth', path: 'auth' }}
+  />
+</DocsLayout>

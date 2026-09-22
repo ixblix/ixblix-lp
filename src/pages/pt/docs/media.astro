@@ -1,0 +1,73 @@
+---
+import DocsLayout from '../../../layouts/DocsLayout.astro';
+import CodeBlock from '../../../components/CodeBlock.astro';
+import PageNav from '../../../components/PageNav.astro';
+import { t } from '../../../i18n';
+import type { Locale } from '../../../i18n/config';
+
+const locale: Locale = 'pt';
+---
+
+<DocsLayout>
+  <h1>{t(locale, 'nav.media')}</h1>
+  <p class="lead">Envie e receba anexos de mídia — imagens, áudio, vídeo, documentos — em conversas criptografadas.</p>
+
+  <h2>Visão Geral</h2>
+  <p>Mensagens de mídia seguem o mesmo esquema de criptografia ponta a ponta que mensagens de texto. O arquivo de mídia é criptografado com uma chave AES-256-GCM por mensagem, e a chave é envolvida para as chaves públicas RSA do destinatário e do remetente.</p>
+
+  <h2>Upload de Mídia</h2>
+  <p>Envie a mídia para o serviço de armazenamento primeiro, depois referencie-a na mensagem:</p>
+  <CodeBlock language="bash" code={`curl -X POST https://api.ixblix.app/api/media/upload \\
+  -H "X-API-Key: smci_xxxx" \\
+  -F "file=@foto.jpg" \\
+  -F "conversationId=conv_xxxx"`} title="cURL" />
+
+  <p>Resposta:</p>
+  <CodeBlock language="json" code={`{
+  "mediaId": "med_xxxx",
+  "mimeType": "image/jpeg",
+  "sizeBytes": 245000,
+  "url": "https://storage.ixblix.app/media/med_xxxx"
+}`} title="Resposta" />
+
+  <h2>Enviando uma Mensagem de Mídia</h2>
+  <p>Inclua o <code>mediaId</code> na sua requisição de mensagem. O campo <code>content</code> carrega uma legenda criptografada (ou string vazia se sem legenda).</p>
+  <CodeBlock language="bash" code={`curl -X POST https://api.ixblix.app/api/messages/company \\
+  -H "X-API-Key: smci_xxxx" \\
+  -H "Content-Type: application/json" \\
+  -d '{
+    "conversationId": "conv_xxxx",
+    "content": "<legenda criptografada>",
+    "contentType": "image",
+    "mediaId": "med_xxxx",
+    "iv": "...",
+    "authTag": "...",
+    "encryptedKey": "...",
+    "selfEncryptedKey": "...",
+    "keyId": "..."
+  }'`} title="cURL" />
+
+  <h2>Tipos de Conteúdo</h2>
+  <table>
+    <thead><tr><th>contentType</th><th>Descrição</th></tr></thead>
+    <tbody>
+      <tr><td><code>text</code></td><td>Mensagem de texto simples (padrão).</td></tr>
+      <tr><td><code>image</code></td><td>Anexo de imagem (JPEG, PNG, WebP).</td></tr>
+      <tr><td><code>audio</code></td><td>Mensagem de áudio (OGG, MP3, M4A).</td></tr>
+      <tr><td><code>video</code></td><td>Anexo de vídeo (MP4, WebM).</td></tr>
+      <tr><td><code>document</code></td><td>Anexo de documento (PDF, DOCX, etc.).</td></tr>
+      <tr><td><code>react</code></td><td>Emoji de reação (usa <code>replyToId</code>).</td></tr>
+    </tbody>
+  </table>
+
+  <h2>Recebendo Mídia</h2>
+  <p>Quando receber um webhook <code>MESSAGE_RECEIVED</code> para uma mensagem de mídia, busque os detalhes com <code>GET /api/messages/{"{conversationId}"}</code>. A resposta inclui o <code>mediaId</code> e uma URL de download.</p>
+
+  <h2>Armazenamento</h2>
+  <p>Arquivos de mídia são armazenados em armazenamento de objetos compatível com S3. O backend gerencia URLs de upload e controle de acesso. Arquivos são servidos através de URLs assinadas que expiram após duração configurável.</p>
+
+  <PageNav
+    prev={{ titleKey: 'nav.richMessages', path: 'rich-messages' }}
+    next={{ titleKey: 'nav.presence', path: 'presence' }}
+  />
+</DocsLayout>

@@ -1,0 +1,60 @@
+---
+import DocsLayout from '../../layouts/DocsLayout.astro';
+import CodeBlock from '../../components/CodeBlock.astro';
+import PageNav from '../../components/PageNav.astro';
+import { t } from '../../i18n';
+import type { Locale } from '../../i18n/config';
+
+const locale: Locale = 'en';
+---
+
+<DocsLayout>
+  <h1>{t(locale, 'nav.quickStart')}</h1>
+  <p class="lead">Get up and running with the ixblix API in minutes. This guide walks you through the complete integration flow.</p>
+
+  <h2>Overview</h2>
+  <p>ixblix is an independent commercial messaging platform that enables secure, white-labeled conversations with end-to-end encryption. Integrators (CRMs, help desks) register companies, create conversations, and exchange encrypted messages via REST API and webhooks.</p>
+
+  <h2>Integration Flow</h2>
+  <ol>
+    <li><strong>Register as an Integrator</strong> — Get API credentials for your platform.</li>
+    <li><strong>Register a Company</strong> — Create a company under your integrator account.</li>
+    <li><strong>Activate the Company</strong> — Complete payment to receive the API key.</li>
+    <li><strong>Configure Webhooks</strong> — Set your endpoint to receive events.</li>
+    <li><strong>Register Encryption Key</strong> — Upload your RSA public key for E2EE.</li>
+    <li><strong>Create a Conversation</strong> — Get a deeplink to share with the customer.</li>
+    <li><strong>Exchange Messages</strong> — Send and receive encrypted messages.</li>
+  </ol>
+
+  <h2>Quick Example</h2>
+  <p>Register your integrator:</p>
+  <CodeBlock language="bash" code={`curl -X POST https://api.ixblix.app/api/integrators/register \\
+  -H "Content-Type: application/json" \\
+  -d '{
+    "name": "My CRM Platform",
+    "callbackUrl": "https://mycrm.example.com/ixblix/callback",
+    "contactEmail": "admin@mycrm.example.com"
+  }'`} title="cURL" />
+
+  <p>Create a conversation:</p>
+  <CodeBlock language="bash" code={`curl -X POST https://api.ixblix.app/api/conversations \\
+  -H "X-API-Key: smci_xxxx" \\
+  -H "Content-Type: application/json" \\
+  -d '{
+    "contact": {
+      "externalId": "whatsapp_5511999999999",
+      "name": "Jane Doe"
+    }
+  }'`} title="cURL" />
+
+  <h2>Next Steps</h2>
+  <ul>
+    <li><a href="/docs/integrator-registration">Integrator Registration</a> — Detailed registration guide.</li>
+    <li><a href="/docs/sdk">JavaScript SDK</a> — Use the official <code>@ixblix/sdk-js</code> package.</li>
+    <li><a href="/docs/sample-integrator">Sample Integrator</a> — Run the simulator locally.</li>
+  </ul>
+
+  <PageNav
+    next={{ titleKey: 'nav.integratorRegistration', path: 'integrator-registration' }}
+  />
+</DocsLayout>

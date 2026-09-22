@@ -1,0 +1,64 @@
+---
+import DocsLayout from '../../../layouts/DocsLayout.astro';
+import CodeBlock from '../../../components/CodeBlock.astro';
+import PageNav from '../../../components/PageNav.astro';
+import { t } from '../../../i18n';
+import type { Locale } from '../../../i18n/config';
+
+const locale: Locale = 'pt';
+---
+
+<DocsLayout>
+  <h1>{t(locale, 'nav.integratorRegistration')}</h1>
+  <p class="lead">Registre sua aplicação (CRM, help desk, sistema de tickets) como integrador para receber credenciais de API.</p>
+
+  <h2>Endpoint de Registro</h2>
+  <CodeBlock language="bash" code={`curl -X POST https://api.ixblix.app/api/integrators/register \\
+  -H "Content-Type: application/json" \\
+  -d '{
+    "name": "My CRM Platform",
+    "callbackUrl": "https://mycrm.example.com/ixblix/callback",
+    "contactEmail": "admin@mycrm.example.com"
+  }'`} title="cURL" />
+
+  <h2>Campos da Requisição</h2>
+  <table>
+    <thead><tr><th>Campo</th><th>Obrigatório</th><th>Descrição</th></tr></thead>
+    <tbody>
+      <tr><td><code>name</code></td><td>Sim</td><td>Nome de exibição do seu integrador.</td></tr>
+      <tr><td><code>callbackUrl</code></td><td>Sim</td><td>URL para onde o ixblix envia as credenciais para verificação.</td></tr>
+      <tr><td><code>contactEmail</code></td><td>Sim</td><td>Email de contato do integrador.</td></tr>
+    </tbody>
+  </table>
+
+  <h2>Verificação via Callback</h2>
+  <p>O ixblix envia um POST para seu <code>callbackUrl</code> com:</p>
+  <CodeBlock language="json" code={`{
+  "integratorId": "int_a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+  "accessToken": "ixblix_integrator_token_xxxxxxxxxxxx",
+  "createdAt": "2026-01-15T10:30:00.000Z"
+}`} title="Payload do callback" />
+
+  <p>Seu endpoint deve responder com <code>200 OK</code> para confirmar o recebimento. Armazene essas credenciais com segurança — elas são usadas em todas as chamadas de API subsequentes.</p>
+
+  <h2>Usando as Credenciais</h2>
+  <p>Use as credenciais do integrador como HTTP Basic Auth:</p>
+  <CodeBlock language="bash" code={`curl https://api.ixblix.app/api/plans \\
+  -u "int_a1b2c3d4-...:ixblix_integrator_token_xxxx"`} title="cURL" />
+
+  <h2>Exemplo de Handler</h2>
+  <CodeBlock language="typescript" code={`import express from 'express';
+const app = express();
+app.use(express.json());
+
+app.post('/ixblix/callback', async (req, res) => {
+  const { integratorId, accessToken } = req.body;
+  await saveIntegratorCredentials({ integratorId, accessToken });
+  res.status(200).json({ received: true });
+});`} title="Handler Express" />
+
+  <PageNav
+    prev={{ titleKey: 'nav.quickStart', path: 'quickstart' }}
+    next={{ titleKey: 'nav.companyRegistration', path: 'company-registration' }}
+  />
+</DocsLayout>
