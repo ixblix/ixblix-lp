@@ -87,6 +87,33 @@ const result = await client.integrator.register({
       </div>
 
       <h2>{t("quickstart.step3.title")}</h2>
+      <p>{t("quickstart.step3.plansText")}</p>
+      <CodeBlock
+        language="bash"
+        title="cURL"
+        code={`curl https://api.ixblix.app/api/plans`}
+      />
+      <CodeBlock
+        language="json"
+        title={t("quickstart.step3.response")}
+        code={`{
+  "plans": [
+    {
+      "id": "plan_starter",
+      "name": "Starter",
+      "monthlyPrice": 4900,
+      "includedCredits": 1000
+    },
+    {
+      "id": "plan_pro",
+      "name": "Professional",
+      "monthlyPrice": 14900,
+      "includedCredits": 5000
+    }
+  ]
+}`}
+      />
+      <p>{t("quickstart.step3.registerText")}</p>
       <CodeBlock
         language="typescript"
         title="create-company.ts"
@@ -97,9 +124,13 @@ const client = new IxblixClient({
   accessToken: 'your-access-token',
 });
 
+// First, list available plans
+const { plans } = await client.plans.list();
+const planId = plans[0].id; // or choose based on your needs
+
 const { company, checkoutUrl } = await client.company.register({
   name: 'Acme Corp',
-  planId: 'plan-starter-id',
+  planId,
 });
 
 // Direct the company owner to checkoutUrl to complete payment`}

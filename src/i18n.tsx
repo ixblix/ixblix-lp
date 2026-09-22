@@ -176,6 +176,9 @@ const translations: Record<Locale, Record<string, string>> = {
     "quickstart.callout.callbackEnd": ". Your endpoint must return",
     "quickstart.callout.callbackConfirm": "to confirm receipt.",
     "quickstart.step3.title": "Step 3 — Create a Company",
+    "quickstart.step3.plansText": "First, list the available plans to choose one:",
+    "quickstart.step3.response": "Response",
+    "quickstart.step3.registerText": "Now register the company with the selected plan:",
     "quickstart.step4.title": "Step 4 — Activate & Configure",
     "quickstart.step4.text":
       "After payment, activate the company to receive its API key:",
@@ -1019,6 +1022,9 @@ const translations: Record<Locale, Record<string, string>> = {
     "quickstart.callout.callbackEnd": ". Seu endpoint deve retornar",
     "quickstart.callout.callbackConfirm": "para confirmar o recebimento.",
     "quickstart.step3.title": "Passo 3 — Crie uma Empresa",
+    "quickstart.step3.plansText": "Primeiro, liste os planos disponíveis para escolher um:",
+    "quickstart.step3.response": "Resposta",
+    "quickstart.step3.registerText": "Agora registre a empresa com o plano selecionado:",
     "quickstart.step4.title": "Passo 4 — Ative e Configure",
     "quickstart.step4.text":
       "Após o pagamento, ative a empresa para receber sua chave de API:",
@@ -1879,6 +1885,9 @@ const translations: Record<Locale, Record<string, string>> = {
     "quickstart.callout.callbackEnd": ". Su endpoint debe devolver",
     "quickstart.callout.callbackConfirm": "para confirmar la recepción.",
     "quickstart.step3.title": "Paso 3 — Cree una Empresa",
+    "quickstart.step3.plansText": "Primero, liste los planes disponibles para elegir uno:",
+    "quickstart.step3.response": "Respuesta",
+    "quickstart.step3.registerText": "Ahora registre la empresa con el plan seleccionado:",
     "quickstart.step4.title": "Paso 4 — Active y Configure",
     "quickstart.step4.text":
       "Después del pago, active la empresa para recibir su clave de API:",
