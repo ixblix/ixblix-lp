@@ -35,8 +35,12 @@ const companyClient = new IxblixClient({
 });`} title="TypeScript" />
 
   <h2>Integrator Methods</h2>
-  <CodeBlock language="typescript" code={`// Plans
+  <CodeBlock language="typescript" code={`// Register your platform
+await integratorClient.registerIntegrator({ name, hostname, callbackUrl });
+
+// Plans and providers
 const plans = await integratorClient.listPlans();
+const providers = await integratorClient.listPaymentProviders();
 
 // Company registration
 const { company, payment } = await integratorClient.registerCompany({ name, handle, planId });
@@ -65,6 +69,16 @@ await companyClient.markMessageReadByCompany(conversationId, messageId);
 
 // Presence
 await companyClient.reportCompanyPresence(conversationId, 'typing');`} title="TypeScript" />
+
+  <h2>Payment Methods</h2>
+  <CodeBlock language="typescript" code={`// List stored payment methods
+const methods = await companyClient.listPaymentMethods();
+
+// Available payment-change instruments
+const options = await companyClient.getPaymentChangeOptions();
+
+// Start a plan or payment-method change checkout
+const change = await companyClient.startPaymentChange({ planId });`} title="TypeScript" />
 
   <h2>Crypto Helpers</h2>
   <CodeBlock language="typescript" code={`import {

@@ -18,23 +18,22 @@ npm install @ixblix/sdk-js
 
 ### Step 1: Register as an Integrator
 
-Register your application (CRM, help desk, ticket system) to receive API credentials. This is a direct REST API call (the SDK does not wrap integrator registration):
+Register your application (CRM, help desk, ticket system) to receive API credentials:
 
 ```typescript
-const response = await fetch(
-  "https://api.ixblix.app/api/integrators/register",
-  {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      name: "My CRM Platform",
-      hostname: "mycrm.example.com",
-      callbackUrl: "https://mycrm.example.com/ixblix/callback",
-      // Optional: subscription identifier when required by the assigned payment provider
-      // subscriptionId: '{paymentProvider}:{id}',
-    }),
-  },
-);
+import { IxblixClient } from "@ixblix/sdk-js";
+
+const integratorClient = new IxblixClient({
+  baseUrl: "https://api.ixblix.app",
+});
+
+await integratorClient.registerIntegrator({
+  name: "My CRM Platform",
+  hostname: "mycrm.example.com",
+  callbackUrl: "https://mycrm.example.com/ixblix/callback",
+  // Optional: subscription identifier when required by the assigned payment provider
+  // subscriptionId: '{paymentProvider}:{id}',
+});
 
 // ixblix will POST to your callbackUrl with credentials
 // Check your callback endpoint for integratorId + accessToken
@@ -608,6 +607,18 @@ const companyClient = new IxblixClient({
 });
 ```
 
+### Integrator Onboarding
+
+```typescript
+await integratorClient.registerIntegrator({
+  name,
+  hostname,
+  callbackUrl,
+  force?,        // replace existing verified registration
+  subscriptionId?,
+});
+```
+
 ### Company Onboarding (integrator auth)
 
 ```typescript
@@ -663,6 +674,14 @@ const { purchase, result } = await companyClient.purchaseCredits({
   provider,
 });
 const purchases = await companyClient.listCreditPurchases();
+```
+
+### Payment Methods
+
+```typescript
+const methods = await companyClient.listPaymentMethods();
+const options = await companyClient.getPaymentChangeOptions();
+const change = await companyClient.startPaymentChange({ planId? });
 ```
 
 ### Crypto Helpers
