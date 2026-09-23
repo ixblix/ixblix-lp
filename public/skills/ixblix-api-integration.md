@@ -317,7 +317,11 @@ console.log('Valid:', isValid);
 
 ## Webhook Event Types
 
-All webhook events use a flat JSON structure with an `event` field indicating the type. They are signed with HMAC-SHA256 via the `X-Ixblix-Signature` header.
+All webhook events use a flat JSON structure with an `event` field indicating the type. They are signed with HMAC-SHA256 via the `X-Ixblix-Signature` header. Each delivery also includes:
+
+- `X-Ixblix-Event-Id`: unique delivery ID (use for deduplication).
+- `X-Ixblix-Event`: event type.
+- `X-Ixblix-Company-Id`: company ID (useful for multi-tenant receivers to look up the correct secret in O(1)).
 
 | Event                 | When                                  | Key Fields                                  |
 | --------------------- | ------------------------------------- | ------------------------------------------- |
