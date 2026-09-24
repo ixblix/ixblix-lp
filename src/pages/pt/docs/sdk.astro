@@ -1,6 +1,7 @@
 ---
 import DocsLayout from '../../../layouts/DocsLayout.astro';
 import CodeBlock from '../../../components/CodeBlock.astro';
+import Endpoint from '../../../components/Endpoint.astro';
 import PageNav from '../../../components/PageNav.astro';
 import { t } from '../../../i18n';
 import type { Locale } from '../../../i18n/config';
@@ -10,128 +11,532 @@ const locale: Locale = 'pt';
 
 <DocsLayout>
   <h1>{t(locale, 'nav.sdk')}</h1>
-  <p class="lead">Pacote oficial <code>@ixblix/sdk-js</code> TypeScript com cliente HTTP tipado, auxiliares de criptografia e verificação de webhooks.</p>
+  <p class="lead">
+    Complete reference for the official <code>@ixblix/sdk-js</code> TypeScript package.
+    Covers every exported class, function, type and constant — with signatures, parameters,
+    return values and runnable examples.
+  </p>
 
-  <h2>Instalação</h2>
-  <CodeBlock language="bash" code="npm install @ixblix/sdk-js" title="npm" />
+  <div class="callout callout-info">
+    <div class="callout-title">Package</div>
+    <p><code>npm install @ixblix/sdk-js</code> — requires Node.js 18+. Ships ESM + CJS with full TypeScript declarations.</p>
+  </div>
 
-  <h2>Configuração do Cliente</h2>
-  <CodeBlock language="typescript" code={`import { IxblixClient, loadOrCreateOperatorKey } from '@ixblix/sdk-js';
+  <h2>Table of contents</h2>
+  <ul>
+    <li><a href="#client">IxblixClient — HTTP client</a></li>
+    <li><a href="#crypto">Crypto helpers — E2EE</a></li>
+    <li><a href="#keypair">Keypair persistence</a></li>
+    <li><a href="#webhooks">Webhook verification</a></li>
+    <li><a href="#errors">IxblixError</a></li>
+    <li><a href="#types">Shared types</a></li>
+  </ul>
 
-const operatorKey = await loadOrCreateOperatorKey({ path: './keys/operator.json' });
+  <h2 id="client">IxblixClient</h2>
+  <p>Typed HTTP client for the ixblix REST API. One instance per scope — integrator or company.</p>
 
-// Cliente no escopo do integrador
-const integratorClient = new IxblixClient({
+  <h3>Constructor</h3>
+  <CodeBlock language="typescript" code={`import { IxblixClient } from '@ixblix/sdk-js';
+
+const client = new IxblixClient({
   baseUrl: 'https://api.ixblix.app',
-  integratorId: 'int_xxxx',
-  integratorAccessToken: 'ixblix_integrator_token_xxxx',
-});
+  apiKey?: string,              // X-API-Key header (company scope)
+  integratorId?: string,        // HTTP Basic user (integrator scope)
+  integratorAccessToken?: string,
+  operatorKey?: OperatorKeyPair, // required to encrypt outgoing messages
+  fetch?: typeof fetch,         // optional custom fetch
+});`} title="IxblixClient" />
 
-// Cliente no escopo da empresa
-const companyClient = new IxblixClient({
-  baseUrl: 'https://api.ixblix.app',
-  apiKey: 'smci_xxxx',
-  operatorKey,
-});`} title="TypeScript" />
+  <h3>Integrator methods</h3>
 
-  <h2>Métodos do Integrador</h2>
-  <CodeBlock language="typescript" code={`// Registrar sua plataforma
-await integratorClient.registerIntegrator({ name, hostname, callbackUrl });
+  <Endpoint method="POST" path="/integrators/register" auth="HTTP Basic" authType="integrator" />
+  <CodeBlock language="typescript" code={`client.registerIntegrator({
+  name: string,
+  hostname: string,
+  callbackUrl: string,
+  force?: boolean,
+  subscriptionId?: string,
+}): Promise<RegisterIntegratorResult>
 
-// Planos e provedores
-const plans = await integratorClient.listPlans();
-const providers = await integratorClient.listPaymentProviders();
+// Three-way handshake: ixblix POSTs a challenge to callbackUrl,
+// your endpoint echoes the registration payload, then echoes the credentials.`} title="registerIntegrator" />
 
-// Registro de empresa
-const { company, payment } = await integratorClient.registerCompany({ name, handle, planId });
+  <Endpoint method="GET" path="/plans" auth="HTTP Basic" authType="integrator" />
+  <CodeBlock language="typescript" code={`client.listPlans(): Promise<Plan[]>
 
-// Ativação de empresa
-const { apiKey } = await integratorClient.activateCompany(company.id, payment.transactionId);`} title="TypeScript" />
+// Returns all active subscription plans (billingType, includedConversations,
+// includedMessages, durationDays, priceCents, overagePriceCents).`} title="listPlans" />
 
-  <h2>Métodos da Empresa</h2>
-  <CodeBlock language="typescript" code={`// Webhook
-const { webhookSecret } = await companyClient.updateWebhook({ webhookUrl });
+  <Endpoint method="GET" path="/payment/providers" auth="HTTP Basic" authType="integrator" />
+  <CodeBlock language="typescript" code={`client.listPaymentProviders(): Promise<PaymentProvidersResult>
 
-// Chave de criptografia
-await companyClient.registerEncryptionKey({ keyId, publicKey });
+// { providers: string[] } — e.g. ['asaas', 'stripe'].`} title="listPaymentProviders" />
 
-// Conversas
-const { conversation, deeplink } = await companyClient.createConversation({
-  contact: { externalId, name, metadata },
-});
+  <Endpoint method="POST" path="/companies/register" auth="HTTP Basic" authType="integrator" />
+  <CodeBlock language="typescript" code={`client.registerCompany({
+  name: string,
+  handle: string,
+  planId?: string,
+  confirmationWebhookUrl?: string,
+  email?: string,
+  taxId?: string,
+}): Promise<RegisterCompanyResult>
 
-// Mensagens
-const envelope = encryptToRecipient('Olá!', customerPublicKeySpki, operatorKey.keyId, operatorKey.publicKeySpki);
-await companyClient.sendCompanyMessage(conversationId, envelope);
+// Returns { company, payment } where payment contains transactionId,
+// checkoutUrl (for paid plans) and confirmationUrl.`} title="registerCompany" />
 
-// Recibos de leitura
-await companyClient.markMessageReadByCompany(conversationId, messageId);
+  <Endpoint method="POST" path="/companies/{id}/activate/{transactionId}" auth="HTTP Basic" authType="integrator" />
+  <CodeBlock language="typescript" code={`client.activateCompany(
+  companyId: string,
+  transactionId: string,
+): Promise<ActivateCompanyResult>
 
-// Presença
-await companyClient.reportCompanyPresence(conversationId, 'typing');`} title="TypeScript" />
+// Returns { apiKey, status }. Store the apiKey in a secret manager.`} title="activateCompany" />
 
-  <h2>Métodos de Pagamento</h2>
-  <CodeBlock language="typescript" code={`// Listar métodos de pagamento armazenados
-const methods = await companyClient.listPaymentMethods();
+  <h3>Company methods — profile &amp; customization</h3>
 
-// Instrumentos disponíveis para troca
-const options = await companyClient.getPaymentChangeOptions();
+  <Endpoint method="GET" path="/companies/profile" auth="X-API-Key" authType="api-key" />
+  <CodeBlock language="typescript" code={`client.getProfile(): Promise<CompanyProfile>
 
-// Iniciar checkout de troca de plano ou método de pagamento
-const change = await companyClient.startPaymentChange({ planId });`} title="TypeScript" />
+// { id, name, handle, status, websiteUrl, customizations }`} title="getProfile" />
 
-  <h2>Auxiliares de Criptografia</h2>
-  <CodeBlock language="typescript" code={`import {
-  generateOperatorKeyPair,
-  loadOrCreateOperatorKey,
-  encryptToRecipient,
-  decryptEnvelope,
-  encryptRichMessage,
-  decryptAttachments,
-  encryptMediaToRecipient,
-  decryptMediaEnvelope,
-} from '@ixblix/sdk-js';
+  <Endpoint method="GET" path="/companies/balance" auth="X-API-Key" authType="api-key" />
+  <CodeBlock language="typescript" code={`client.getBalance(): Promise<CompanyBalance>
 
-// Gerar ou carregar par de chaves
-const operatorKey = await loadOrCreateOperatorKey({
-  path: './keys/operator.json',
-});
+// { id, name, balanceCents, planId, planExpiresAt }`} title="getBalance" />
 
-// Criptografar texto
+  <Endpoint method="PUT" path="/companies/customization" auth="X-API-Key" authType="api-key" />
+  <CodeBlock language="typescript" code={`client.updateCustomization({
+  brandName?: string,
+  logoUrl?: string,
+  rectangularLogoUrl?: string,
+  squareIconUrl?: string,
+  primaryColor?: string,
+  faviconUrl?: string,
+  websiteUrl?: string,
+  welcomeMessage?: string,
+}): Promise<CompanyCustomization>`} title="updateCustomization" />
+
+  <Endpoint method="POST" path="/companies/branding" auth="X-API-Key" authType="api-key" />
+  <CodeBlock language="typescript" code={`client.uploadBranding({
+  squareIcon?: BrandingFile,
+  rectangularLogo?: BrandingFile,
+}): Promise<CompanyCustomization>
+
+// BrandingFile = { data: Uint8Array, fileName: string, mimeType: string }
+// Multipart/form-data upload. Returns the updated customization.`} title="uploadBranding" />
+
+  <Endpoint method="PUT" path="/companies/webhook" auth="X-API-Key" authType="api-key" />
+  <CodeBlock language="typescript" code={`client.updateWebhook({
+  webhookUrl?: string | null,
+  rotateSecret?: boolean,
+}): Promise<{ webhookUrl: string | null; webhookSecret: string | null }>
+
+// The secret is returned ONCE. Store it to verify webhook signatures.`} title="updateWebhook" />
+
+  <h3>Company methods — encryption</h3>
+
+  <Endpoint method="PUT" path="/companies/encryption-key" auth="X-API-Key" authType="api-key" />
+  <CodeBlock language="typescript" code={`client.registerEncryptionKey({
+  keyId: string,
+  publicKey: string, // base64 SPKI DER
+}): Promise<CompanyEncryptionKey>
+
+// Rotates the active key. The previous key is retired but kept for
+// decrypting existing conversations.`} title="registerEncryptionKey" />
+
+  <Endpoint method="GET" path="/companies/encryption-key" auth="X-API-Key" authType="api-key" />
+  <CodeBlock language="typescript" code={`client.getEncryptionKey(): Promise<CompanyEncryptionKey>
+
+// Returns the currently active company encryption key.`} title="getEncryptionKey" />
+
+  <h3>Company methods — conversations</h3>
+
+  <Endpoint method="POST" path="/conversations" auth="X-API-Key" authType="api-key" />
+  <CodeBlock language="typescript" code={`client.createConversation({
+  contact: {
+    externalId: string,
+    name?: string,
+    metadata?: Record<string, unknown>,
+  },
+  operator?: {
+    uuid?: string,
+    name?: string,
+    image?: string,
+    gravatarHash?: string,
+  },
+}): Promise<CreateConversationResult>
+
+// Returns { conversation, contact, deeplink, company, operator }.
+// Share the deeplink with the customer on the original channel.`} title="createConversation" />
+
+  <Endpoint method="PUT" path="/conversations/{conversationId}/operator" auth="X-API-Key" authType="api-key" />
+  <CodeBlock language="typescript" code={`client.updateOperator(
+  conversationId: string,
+  operator: OperatorInput,
+): Promise<UpdateOperatorResult>
+
+// OperatorInput = { uuid?, name?, image?, gravatarHash? }
+// Pass null to clear a field. Can be called at any time.`} title="updateOperator" />
+
+  <Endpoint method="GET" path="/conversations/{conversationId}/keys" auth="X-API-Key" authType="api-key" />
+  <CodeBlock language="typescript" code={`client.getConversationKeys(
+  conversationId: string,
+): Promise<ConversationKeys>
+
+// { conversationId, keyStatus, operatorPublicKey, operatorKeyId, customerPublicKey }
+// keyStatus: 'AWAITING_OPERATOR' | 'AWAITING_CUSTOMER' | 'ACTIVE'
+// Poll until keyStatus === 'ACTIVE' and customerPublicKey is set,
+// or wait for the CUSTOMER_JOINED webhook.`} title="getConversationKeys" />
+
+  <h3>Company methods — messages</h3>
+
+  <Endpoint method="POST" path="/messages/company" auth="X-API-Key" authType="api-key" />
+  <CodeBlock language="typescript" code={`client.sendCompanyMessage(
+  conversationId: string,
+  envelope: MessageEnvelope,
+  contentType?: 'text' | 'react', // default 'text'
+  operatorUuid?: string,
+  replyToId?: string | null,
+  attachments?: string | null, // encrypted JSON
+): Promise<Message>
+
+// The envelope must be produced by encryptToRecipient or encryptRichMessage.`} title="sendCompanyMessage" />
+
+  <Endpoint method="GET" path="/messages/{conversationId}" auth="X-API-Key" authType="api-key" />
+  <CodeBlock language="typescript" code={`client.listMessages(
+  conversationId: string,
+): Promise<Message[]>
+
+// Returns all messages (content is always ciphertext when encrypted).
+// Each message includes replyTo (one level) and reactions.`} title="listMessages" />
+
+  <Endpoint method="POST" path="/messages/company" auth="X-API-Key" authType="api-key" />
+  <CodeBlock language="typescript" code={`client.reactToMessage(
+  conversationId: string,
+  messageId: string,
+  emoji: string, // pass '' to clear
+  operatorUuid?: string,
+): Promise<Message>
+
+// Encrypts the emoji and sends it as contentType='react' with replyToId.
+// Requires operatorKey in the client constructor.`} title="reactToMessage" />
+
+  <Endpoint method="POST" path="/messages/company/read" auth="X-API-Key" authType="api-key" />
+  <CodeBlock language="typescript" code={`client.markMessageReadByCompany(
+  conversationId: string,
+  messageId: string,
+): Promise<{ messageId: string; readAt: string }>
+
+// Emits a 'message_read' Socket.io event to the customer.`} title="markMessageReadByCompany" />
+
+  <h3>Company methods — presence</h3>
+
+  <Endpoint method="POST" path="/conversations/{conversationId}/presence" auth="X-API-Key" authType="api-key" />
+  <CodeBlock language="typescript" code={`client.reportCompanyPresence(
+  conversationId: string,
+  type: 'typing' | 'stopped' | 'recording',
+): Promise<{ status: string }>
+
+// Relays operator presence to the customer's chat app via Socket.io.`} title="reportCompanyPresence" />
+
+  <h3>Company methods — media</h3>
+
+  <Endpoint method="POST" path="/media/company" auth="X-API-Key" authType="api-key" />
+  <CodeBlock language="typescript" code={`client.sendCompanyMedia(
+  conversationId: string,
+  file: MediaUpload, // { data: Uint8Array, fileName, mimeType }
+  envelope: MessageEnvelope,
+  operatorUuid?: string,
+  replyToId?: string | null,
+  attachments?: string | null,
+): Promise<Message>
+
+// Multipart/form-data upload. The file must be encrypted with
+// encryptMediaToRecipient or encryptMediaWithAttachments.`} title="sendCompanyMedia" />
+
+  <Endpoint method="GET" path="/media/{mediaId}" auth="X-API-Key" authType="api-key" />
+  <CodeBlock language="typescript" code={`client.getMedia(mediaId: string): Promise<Media>
+
+// Returns metadata: { id, companyId, conversationId, messageId, mimeType,
+// fileName, sizeBytes, iv, authTag, encryptedKey, selfEncryptedKey, keyId, createdAt }`} title="getMedia" />
+
+  <Endpoint method="GET" path="/media/{mediaId}/content" auth="X-API-Key" authType="api-key" />
+  <CodeBlock language="typescript" code={`client.downloadCompanyMedia(
+  mediaId: string,
+): Promise<MediaDownload>
+
+// Returns { data: Uint8Array, media: Media }.
+// Decrypt with decryptMediaEnvelope.`} title="downloadCompanyMedia" />
+
+  <h3>Company methods — payments &amp; credits</h3>
+
+  <Endpoint method="POST" path="/companies/credits/purchase" auth="X-API-Key" authType="api-key" />
+  <CodeBlock language="typescript" code={`client.purchaseCredits({
+  amountCents: number,
+  currency?: string,
+  provider: string,
+  metadata?: Record<string, unknown>,
+}): Promise<PurchaseCreditsResult>
+
+// Top up the company's prepaid balance.`} title="purchaseCredits" />
+
+  <Endpoint method="GET" path="/companies/credits/purchases" auth="X-API-Key" authType="api-key" />
+  <CodeBlock language="typescript" code={`client.listCreditPurchases(): Promise<CreditPurchase[]>
+
+// Returns all credit purchases with status: PENDING | COMPLETED | FAILED | REFUNDED.`} title="listCreditPurchases" />
+
+  <Endpoint method="GET" path="/companies/payment-methods" auth="X-API-Key" authType="api-key" />
+  <CodeBlock language="typescript" code={`client.listPaymentMethods(): Promise<PaymentMethod[]>
+
+// Returns stored cards and Pix methods, default first.
+// { id, provider, type, brand, last4, expMonth, expYear, holderName, isDefault, status }`} title="listPaymentMethods" />
+
+  <Endpoint method="GET" path="/companies/payment-change/options" auth="X-API-Key" authType="api-key" />
+  <CodeBlock language="typescript" code={`client.getPaymentChangeOptions(): Promise<PaymentChangeOptions>
+
+// { card, pixAutomatic, pixAutomaticCycle, currentPlanExpiresAt,
+//   stillActive, currentPaymentMethodType }`} title="getPaymentChangeOptions" />
+
+  <Endpoint method="POST" path="/companies/payment-change/start" auth="X-API-Key" authType="api-key" />
+  <CodeBlock language="typescript" code={`client.startPaymentChange({
+  planId?: string,
+}): Promise<StartPaymentChangeResult>
+
+// Returns { transactionId, provider, amountCents, currency,
+// confirmationUrl, status, checkoutUrl }.
+// Redirect the company owner to checkoutUrl.`} title="startPaymentChange" />
+
+  <h3>Company methods — original channel relay</h3>
+
+  <Endpoint method="POST" path="/webhooks/original-channel" auth="X-API-Key" authType="api-key" />
+  <CodeBlock language="typescript" code={`client.relayOriginalChannelMessage({
+  conversationId: string,
+  content: string, // base64 ciphertext
+  iv: string,
+  authTag: string,
+  encryptedKey: string,
+  selfEncryptedKey: string,
+  keyId: string,
+  metadata?: Record<string, unknown>,
+}): Promise<Message>
+
+// Relay a message from WhatsApp/Instagram/etc. into ixblix.
+// The message must be encrypted to the operator's public key.`} title="relayOriginalChannelMessage" />
+
+  <h2 id="crypto">Crypto helpers</h2>
+  <p>
+    End-to-end encryption uses hybrid RSA-OAEP + AES-256-GCM. Each message gets a fresh AES key,
+    wrapped to both the recipient and the sender (so you can read back your own messages).
+  </p>
+
+  <h3>generateOperatorKeyPair</h3>
+  <CodeBlock language="typescript" code={`import { generateOperatorKeyPair } from '@ixblix/sdk-js';
+
+const keypair = generateOperatorKeyPair({
+  modulusLength?: 2048 | 4096, // default 2048
+}): OperatorKeyPair
+
+// Returns { keyId, publicKeySpki, privateKey }.
+// The private key never leaves your process.`} title="generateOperatorKeyPair" />
+
+  <h3>importPublicKey</h3>
+  <CodeBlock language="typescript" code={`import { importPublicKey } from '@ixblix/sdk-js';
+
+const key = importPublicKey(spkiBase64: string): KeyObject
+
+// Import a base64 SPKI DER RSA public key (e.g. the customer's key).`} title="importPublicKey" />
+
+  <h3>encryptToRecipient</h3>
+  <CodeBlock language="typescript" code={`import { encryptToRecipient } from '@ixblix/sdk-js';
+
 const envelope = encryptToRecipient(
-  'Olá!',
-  customerPublicKeySpki,
-  operatorKey.keyId,
-  operatorKey.publicKeySpki,
-);
+  plaintext: string,
+  recipientPublicKeySpki: string,
+  senderKeyId: string,
+  senderPublicKeySpki: string,
+): MessageEnvelope
 
-// Descriptografar mensagem de texto
-const plaintext = decryptEnvelope(message, operatorKey.privateKey);
+// Returns { content, iv, authTag, encryptedKey, selfEncryptedKey, keyId }.
+// All fields are base64url-encoded.`} title="encryptToRecipient" />
 
-// Criptografar mensagem rica (botões, vcard, localização)
-const richEnvelope = encryptRichMessage(
-  'Confirme seu pedido:',
-  { buttons: [{ type: 'reply', label: 'Sim' }] },
-  customerPublicKeySpki,
-  operatorKey.keyId,
-  operatorKey.publicKeySpki,
-);
+  <h3>decryptEnvelope</h3>
+  <CodeBlock language="typescript" code={`import { decryptEnvelope } from '@ixblix/sdk-js';
 
-// Criptografar/descriptografar mídia
-const mediaEnvelope = encryptMediaToRecipient(fileBuffer, customerPublicKeySpki, operatorKey.keyId, operatorKey.publicKeySpki);
-const decrypted = decryptMediaEnvelope(encryptedData, message, operatorKey.privateKey);`} title="TypeScript" />
+const plaintext = decryptEnvelope(
+  envelope: { content, iv?, authTag?, encryptedKey?, selfEncryptedKey? },
+  privateKey: KeyObject,
+): string | null
 
-  <h2>Verificação de Webhooks</h2>
-  <CodeBlock language="typescript" code={`import { verifyWebhook, WEBHOOK_SIGNATURE_HEADER } from '@ixblix/sdk-js';
+// Tries encryptedKey first, then selfEncryptedKey.
+// Returns null when decryption fails.`} title="decryptEnvelope" />
 
-app.post('/webhooks', (req, res) => {
-  const signature = req.header(WEBHOOK_SIGNATURE_HEADER);
-  const { event } = verifyWebhook(req.body, webhookSecret, signature);
-  // Tratar evento...
-  res.status(200).send('OK');
-});`} title="TypeScript" />
+  <h3>encryptRichMessage</h3>
+  <CodeBlock language="typescript" code={`import { encryptRichMessage } from '@ixblix/sdk-js';
+
+const result = encryptRichMessage(
+  content: string,
+  attachments: string | null, // JSON with buttons, vcard, location, linkPreview
+  recipientPublicKeySpki: string,
+  senderKeyId: string,
+  senderPublicKeySpki: string,
+): {
+  content: string,
+  attachments: string | null, // encrypted blob
+  iv: string,
+  authTag: string,
+  encryptedKey: string,
+  selfEncryptedKey: string,
+  keyId: string,
+}
+
+// Encrypts content and attachments with different IVs but the same AES key.
+// The attachments blob embeds its own iv and authTag.`} title="encryptRichMessage" />
+
+  <h3>decryptAttachments</h3>
+  <CodeBlock language="typescript" code={`import { decryptAttachments } from '@ixblix/sdk-js';
+
+const json = decryptAttachments(
+  attachmentsBlob: string,
+  envelope: { encryptedKey?, selfEncryptedKey? },
+  privateKey: KeyObject,
+): string | null
+
+// Decrypts the attachments blob from a rich message.
+// Returns the JSON string or null.`} title="decryptAttachments" />
+
+  <h3>encryptMediaToRecipient</h3>
+  <CodeBlock language="typescript" code={`import { encryptMediaToRecipient } from '@ixblix/sdk-js';
+
+const envelope = encryptMediaToRecipient(
+  fileBytes: Uint8Array,
+  recipientPublicKeySpki: string,
+  senderKeyId: string,
+  senderPublicKeySpki: string,
+): MessageEnvelope
+
+// Encrypts binary media (image/audio/document).
+// Returns the envelope fields; the ciphertext is in envelope.content.`} title="encryptMediaToRecipient" />
+
+  <h3>encryptMediaWithAttachments</h3>
+  <CodeBlock language="typescript" code={`import { encryptMediaWithAttachments } from '@ixblix/sdk-js';
+
+const result = encryptMediaWithAttachments(
+  fileBytes: Uint8Array,
+  attachments: string, // JSON
+  recipientPublicKeySpki: string,
+  senderKeyId: string,
+  senderPublicKeySpki: string,
+): {
+  content: string,
+  iv: string,
+  authTag: string,
+  encryptedKey: string,
+  selfEncryptedKey: string,
+  keyId: string,
+  encryptedAttachments: string,
+}
+
+// Use this when sending media + rich attachments.
+// Both share the same AES key so the recipient can decrypt both.`} title="encryptMediaWithAttachments" />
+
+  <h3>decryptMediaEnvelope</h3>
+  <CodeBlock language="typescript" code={`import { decryptMediaEnvelope } from '@ixblix/sdk-js';
+
+const bytes = decryptMediaEnvelope(
+  envelope: { content, iv?, authTag?, encryptedKey?, selfEncryptedKey? },
+  privateKey: KeyObject,
+): Uint8Array | null
+
+// Decrypts a media file. Returns the plaintext bytes or null.`} title="decryptMediaEnvelope" />
+
+  <h2 id="keypair">Keypair persistence</h2>
+
+  <h3>loadOrCreateOperatorKey</h3>
+  <CodeBlock language="typescript" code={`import { loadOrCreateOperatorKey } from '@ixblix/sdk-js';
+
+const keypair = loadOrCreateOperatorKey(directory: string): OperatorKeyPair
+
+// Loads the keypair from disk, or generates and persists it on first run.
+// Files: operator-private.pem (mode 0600), operator-public.spki, operator-key-id.
+// For production, use a secret manager or KMS instead.`} title="loadOrCreateOperatorKey" />
+
+  <h2 id="webhooks">Webhook verification</h2>
+  <p>
+    ixblix signs every webhook with HMAC-SHA256 using the company's webhook secret.
+    Always verify the signature before acting on the event.
+  </p>
+
+  <h3>Constants</h3>
+  <CodeBlock language="typescript" code={`import {
+  WEBHOOK_SIGNATURE_HEADER,   // 'X-Ixblix-Signature'
+  WEBHOOK_ID_HEADER,           // 'X-Ixblix-Event-Id'
+  WEBHOOK_EVENT_HEADER,        // 'X-Ixblix-Event'
+  WEBHOOK_COMPANY_ID_HEADER,   // 'X-Ixblix-Company-Id'
+} from '@ixblix/sdk-js';`} title="Webhook headers" />
+
+  <h3>verifyWebhook</h3>
+  <CodeBlock language="typescript" code={`import { verifyWebhook } from '@ixblix/sdk-js';
+
+const { event, raw } = verifyWebhook(
+  body: unknown,
+  secret: string,
+  signature?: string,
+): ParsedWebhook
+
+// Computes HMAC-SHA256 of the raw body and compares it (constant-time)
+// against the signature. Throws on mismatch.
+// Returns the typed event (WebhookEvent union).`} title="verifyWebhook" />
+
+  <h3>parseWebhook</h3>
+  <CodeBlock language="typescript" code={`import { parseWebhook } from '@ixblix/sdk-js';
+
+const { event, raw } = parseWebhook(body: unknown): ParsedWebhook
+
+// Parses and validates the event type without checking the signature.
+// Use only when you trust the source (e.g. internal relay).`} title="parseWebhook" />
+
+  <h3>Webhook event types</h3>
+  <table>
+    <thead><tr><th>Event</th><th>Payload</th></tr></thead>
+    <tbody>
+      <tr><td><code>COMPANY_ACTIVATED</code></td><td>{'{ companyId, transactionId, apiKey }'}</td></tr>
+      <tr><td><code>CUSTOMER_JOINED</code></td><td>{'{ companyId, conversationId, customerPublicKey }'}</td></tr>
+      <tr><td><code>MESSAGE_RECEIVED</code></td><td>{'{ companyId, conversationId, messageId, replyToId?, sentAt }'}</td></tr>
+      <tr><td><code>MESSAGE_READ</code></td><td>{'{ companyId, conversationId, messageId, readAt }'}</td></tr>
+      <tr><td><code>CONVERSATION_CLOSED</code></td><td>{'{ companyId, conversationId }'}</td></tr>
+      <tr><td><code>TYPING</code> / <code>STOPPED_TYPING</code> / <code>RECORDING</code> / <code>CHAT_CLOSED</code></td><td>{'{ companyId, conversationId, type }'}</td></tr>
+      <tr><td><code>BALANCE_LOW</code></td><td>{'{ companyId, balanceCents }'}</td></tr>
+    </tbody>
+  </table>
+
+  <h2 id="errors">IxblixError</h2>
+  <CodeBlock language="typescript" code={`import { IxblixError } from '@ixblix/sdk-js';
+
+class IxblixError extends Error {
+  readonly status: number; // HTTP status (0 if request never reached the API)
+  readonly code: string;   // e.g. 'UNAUTHORIZED', 'NOT_FOUND'
+  readonly details?: Array<{ path: string; message: string }>;
+}
+
+// Thrown by every client method when the API returns a non-2xx response.
+// Catch and inspect error.code for programmatic handling.`} title="IxblixError" />
+
+  <h2 id="types">Shared types</h2>
+  <p>All types are exported from the package root. Key types:</p>
+  <ul>
+    <li><code>Contact</code>, <code>ContactInput</code> — customer identity</li>
+    <li><code>Conversation</code>, <code>ConversationKeys</code> — thread state</li>
+    <li><code>Message</code>, <code>MessageEnvelope</code>, <code>Media</code> — encrypted content</li>
+    <li><code>Operator</code>, <code>OperatorInput</code> — agent identity</li>
+    <li><code>CompanyProfile</code>, <code>CompanyCustomization</code> — white-label</li>
+    <li><code>Plan</code>, <code>CompanyBalance</code>, <code>CreditPurchase</code> — billing</li>
+    <li><code>PaymentMethod</code>, <code>PaymentChangeOptions</code> — payment instruments</li>
+    <li><code>WebhookEvent</code> — union of all webhook payloads</li>
+  </ul>
 
   <PageNav
     prev={{ titleKey: 'nav.errors', path: 'errors' }}
+    next={{ titleKey: 'nav.apiReference', path: 'api-reference' }}
   />
 </DocsLayout>

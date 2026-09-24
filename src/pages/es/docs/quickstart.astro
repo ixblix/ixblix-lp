@@ -1,6 +1,7 @@
 ---
 import DocsLayout from '../../../layouts/DocsLayout.astro';
 import CodeBlock from '../../../components/CodeBlock.astro';
+import Endpoint from '../../../components/Endpoint.astro';
 import PageNav from '../../../components/PageNav.astro';
 import { t } from '../../../i18n';
 import type { Locale } from '../../../i18n/config';
@@ -10,47 +11,465 @@ const locale: Locale = 'es';
 
 <DocsLayout>
   <h1>{t(locale, 'nav.quickStart')}</h1>
-  <p class="lead">Comience a usar la API de ixblix en minutos. Esta guía presenta el flujo completo de integración.</p>
+  <p class="lead">
+    A single, end-to-end walkthrough of the whole ixblix integration built on the official
+    <code>@ixblix/sdk-js</code> package. Follow it top to bottom to go from an empty project to a
+    live, end-to-end encrypted overflow conversation.
+  </p>
 
-  <h2>Visión General</h2>
-  <p>ixblix es una plataforma independiente de mensajería comercial que permite conversaciones seguras y white-label con cifrado de extremo a extremo. Los integradores (CRMs, help desks) registran empresas, crean conversaciones e intercambian mensajes cifrados vía API REST y webhooks.</p>
+  <div class="callout callout-info">
+    <div class="callout-title">What you will build</div>
+    <p>An operator backend (your CRM/help desk) that registers companies, hands customers a secure deeplink, and exchanges end-to-end encrypted messages, media and rich messages with them — while receiving real-time events over signed webhooks.</p>
+  </div>
 
-  <h2>Flujo de Integración</h2>
-  <ol>
-    <li><strong>Regístrese como Integrador</strong> — Obtenga credenciales de API para su plataforma.</li>
-    <li><strong>Registre una Empresa</strong> — Cree una empresa en su cuenta de integrador.</li>
-    <li><strong>Active la Empresa</strong> — Complete el pago para recibir la clave de API.</li>
-    <li><strong>Configure Webhooks</strong> — Defina su endpoint para recibir eventos.</li>
-    <li><strong>Registre Clave de Cifrado</strong> — Envíe su clave pública RSA para E2EE.</li>
-    <li><strong>Cree una Conversación</strong> — Obtenga un deeplink para compartir con el cliente.</li>
-    <li><strong>Intercambie Mensajes</strong> — Envíe y reciba mensajes cifrados.</li>
+  <h2>Integration flow</h2>
+  <ol class="steps">
+    <li><strong>Install & configure the SDK</strong> — one client for integrator calls, one for company calls.</li>
+    <li><strong>Register your integrator platform</strong> — prove you own your hostname via a callback challenge.</li>
+    <li><strong>Register a company</strong> — keyless onboarding that returns payment instructions.</li>
+    <li><strong>Activate the company</strong> — after payment you receive the company <code>X-API-Key</code>.</li>
+    <li><strong>Configure the webhook endpoint</strong> — store the HMAC secret to verify events.</li>
+    <li><strong>Register the operator encryption key</strong> — your RSA public key for E2EE.</li>
+    <li><strong>Create a conversation</strong> — get a deeplink to share with the customer.</li>
+    <li><strong>Exchange encrypted messages</strong> — text, media, rich content, reactions, presence.</li>
   </ol>
 
-  <h2>Ejemplo Rápido</h2>
-  <p>Registre su integrador:</p>
-  <CodeBlock language="bash" code={`curl -X POST https://api.ixblix.app/api/integrators/register \\
-  -H "Content-Type: application/json" \\
-  -d '{
-    "name": "My CRM Platform",
-    "hostname": "mycrm.example.com",
-    "callbackUrl": "https://mycrm.example.com/ixblix/callback"
-  }'`} title="cURL" />
-
-  <p>Cree una conversación:</p>
-  <CodeBlock language="bash" code={`curl -X POST https://api.ixblix.app/api/conversations \\
-  -H "X-API-Key: smci_xxxx" \\
-  -H "Content-Type: application/json" \\
-  -d '{
-    "contact": {
-      "externalId": "whatsapp_5511999999999",
-      "name": "Jane Doe"
-    }
-  }'`} title="cURL" />
-
-  <h2>Siguientes Pasos</h2>
+  <h2>Prerequisites</h2>
   <ul>
-    <li><a href="/es/docs/integrator-registration">Registro de Integrador</a> — Guía detallada de registro.</li>
-    <li><a href="/es/docs/sdk">SDK JavaScript</a> — Use el paquete oficial <code>@ixblix/sdk-js</code>.</li>
+    <li><strong>Node.js 18+</strong> (the SDK uses the built-in <code>node:crypto</code> module).</li>
+    <li>An <strong>integrator account</strong> with a publicly reachable <code>callbackUrl</code> (HTTPS).</li>
+    <li>A <strong>webhook endpoint</strong> to receive events (can be the same host).</li>
+  </ul>
+
+  <h2>Step 1 — Install the SDK</h2>
+  <CodeBlock language="bash" code="npm install @ixblix/sdk-js" title="Terminal" />
+
+  <h2>Step 2 — Create the API clients</h2>
+  <p>
+    Integrator-scoped calls (registering companies, listing plans) use HTTP Basic Auth, while every
+    company-scoped call uses the <code>X-API-Key</code> header. Create two clients from the same base URL.
+  </p>
+  <CodeBlock language="typescript" code={`import { IxblixClient } from '@ixblix/sdk-js';
+
+const BASE_URL = 'https://api.ixblix.app';
+
+// Integrator client — company onboarding & catalog.
+export const integrator = new IxblixClient({
+  baseUrl: BASE_URL,
+  integratorId: process.env.IXBLIX_INTEGRATOR_ID,
+  integratorAccessToken: process.env.IXBLIX_INTEGRATOR_TOKEN,
+});
+
+// Company client — conversations, messages, media, keys.
+// The API key is obtained after activation (Step 5).
+export const company = new IxblixClient({
+  baseUrl: BASE_URL,
+  apiKey: process.env.IXBLIX_API_KEY,
+});`} title="client.ts" />
+
+  <h2>Step 3 — Register your integrator platform</h2>
+  <Endpoint method="POST" path="/integrators/register" auth="HTTP Basic" authType="integrator" />
+  <p>
+    Registration is a three-way handshake: ixblix POSTs a <code>challenge</code> to your
+    <code>callbackUrl</code>, your endpoint must echo the original registration payload back, and then
+    ixblix POSTs the credentials which your endpoint must echo with a <code>200</code>.
+  </p>
+  <CodeBlock language="typescript" code={`await integrator.registerIntegrator({
+  name: 'My CRM Platform',
+  hostname: 'mycrm.example.com',
+  callbackUrl: 'https://mycrm.example.com/ixblix/callback',
+});
+
+// The callback handler on your side must answer the challenge,
+// then acknowledge the credentials payload.
+//   POST { type: "challenge" }  -> respond with { name, hostname, callbackUrl }
+//   POST { integratorId, accessToken } -> respond 200`} title="register-integrator.ts" />
+
+  <h2>Step 4 — Register a company</h2>
+  <Endpoint method="POST" path="/companies/register" auth="HTTP Basic" authType="integrator" />
+  <p>
+    Companies are created keyless. You receive the company record plus payment instructions to
+    redirect the customer to the hosted checkout.
+  </p>
+  <CodeBlock language="typescript" code={`const { company: created, payment } = await integrator.registerCompany({
+  name: 'Acme Support',
+  handle: 'acme',
+  planId: 'plan_starter',
+  email: 'billing@acme.example',
+  confirmationWebhookUrl: 'https://mycrm.example.com/ixblix/company-activated',
+});
+
+console.log(payment.transactionId, payment.checkoutUrl);`} title="register-company.ts" />
+
+  <h2>Step 5 — Activate the company</h2>
+  <Endpoint method="POST" path="/companies/{id}/activate/{transactionId}" auth="HTTP Basic" authType="integrator" />
+  <p>
+    Once the payment is confirmed, activate the company to obtain its <code>X-API-Key</code>. Store it
+    in your secret manager — it grants full access to every company resource.
+  </p>
+  <CodeBlock language="typescript" code={`const { apiKey } = await integrator.activateCompany(
+  created.id,
+  payment.transactionId,
+);
+
+// Persist the key and build the company-scoped client.
+const company = new IxblixClient({ baseUrl: BASE_URL, apiKey });`} title="activate-company.ts" />
+
+  <h2>Step 6 — Configure the webhook endpoint</h2>
+  <Endpoint method="PUT" path="/companies/webhook" auth="X-API-Key" authType="api-key" />
+  <p>
+    Set (or rotate) the URL where ixblix delivers events. Every URL change — or
+    <code>rotateSecret: true</code> — generates a fresh HMAC secret that is returned <strong>once</strong>.
+    Store it; you need it to verify signatures.
+  </p>
+  <CodeBlock language="typescript" code={`const { webhookUrl, webhookSecret } = await company.updateWebhook({
+  webhookUrl: 'https://mycrm.example.com/ixblix/webhook',
+});
+
+// webhookSecret looks like: whsec_xxxxxxxx...
+// Store it in your secret manager. It is never returned again.`} title="update-webhook.ts" />
+
+  <h2>Step 7 — Generate and register the operator key</h2>
+  <Endpoint method="PUT" path="/companies/encryption-key" auth="X-API-Key" authType="api-key" />
+  <p>
+    Hold a persistent RSA keypair. The private key <strong>never</strong> leaves your process; only the
+    public key is registered. New conversations snapshot the active key, and rotating it keeps the
+    previous key for reading old conversations.
+  </p>
+  <CodeBlock language="typescript" code={`import {
+  IxblixClient,
+  loadOrCreateOperatorKey,
+} from '@ixblix/sdk-js';
+
+// Load an existing keypair or create one on first run (stored with 0600 perms).
+const operatorKey = loadOrCreateOperatorKey('./.ixblix-keys');
+
+await company.registerEncryptionKey({
+  keyId: operatorKey.keyId,
+  publicKey: operatorKey.publicKeySpki,
+});
+
+// Build a client that can encrypt outgoing messages.
+const companyWithKey = new IxblixClient({
+  baseUrl: BASE_URL,
+  apiKey: process.env.IXBLIX_API_KEY,
+  operatorKey,
+});`} title="operator-key.ts" />
+
+  <h2>Step 8 — Receive events</h2>
+  <p>
+    ixblix pushes every event to your endpoint with an HMAC-SHA256 signature in the
+    <code>X-Ixblix-Signature</code> header. Always verify it against the raw body before acting. Use the
+    raw-body middleware below so the exact bytes are available for verification.
+  </p>
+  <CodeBlock language="typescript" code={`import express from 'express';
+import { verifyWebhook, WEBHOOK_SIGNATURE_HEADER } from '@ixblix/sdk-js';
+
+const app = express();
+const webhookSecret = process.env.IXBLIX_WEBHOOK_SECRET!;
+
+// Keep the raw body so the signature can be verified byte-for-byte.
+app.post(
+  '/ixblix/webhook',
+  express.raw({ type: 'application/json' }),
+  (req, res) => {
+    const signature = req.header(WEBHOOK_SIGNATURE_HEADER);
+    const body = JSON.parse(req.body.toString('utf8'));
+
+    let event;
+    try {
+      ({ event } = verifyWebhook(body, webhookSecret, signature));
+    } catch (err) {
+      return res.status(401).send('invalid signature');
+    }
+
+    switch (event.event) {
+      case 'CUSTOMER_JOINED':
+        return void onCustomerJoined(event);
+      case 'MESSAGE_RECEIVED':
+        return void onMessageReceived(event);
+      case 'MESSAGE_READ':
+        return void onMessageRead(event);
+      case 'CONVERSATION_CLOSED':
+        return void onConversationClosed(event);
+      case 'BALANCE_LOW':
+        return void onBalanceLow(event);
+      default:
+        return void res.status(200).send('ok');
+    }
+  },
+);`} title="webhook.ts" />
+
+  <table>
+    <thead><tr><th>Event</th><th>When it fires</th></tr></thead>
+    <tbody>
+      <tr><td><code>COMPANY_ACTIVATED</code></td><td>A company finished onboarding and received its API key.</td></tr>
+      <tr><td><code>CUSTOMER_JOINED</code></td><td>The customer opened the deeplink and registered their public key.</td></tr>
+      <tr><td><code>MESSAGE_RECEIVED</code></td><td>The customer sent a message (text or media).</td></tr>
+      <tr><td><code>MESSAGE_READ</code></td><td>The customer read a message you sent.</td></tr>
+      <tr><td><code>TYPING</code> / <code>STOPPED_TYPING</code> / <code>RECORDING</code> / <code>CHAT_CLOSED</code></td><td>Presence reported by the customer's chat window.</td></tr>
+      <tr><td><code>CONVERSATION_CLOSED</code></td><td>The conversation was closed.</td></tr>
+      <tr><td><code>BALANCE_LOW</code></td><td>The company pre-paid balance dropped below the threshold.</td></tr>
+    </tbody>
+  </table>
+
+  <h2>Step 9 — Create a conversation</h2>
+  <Endpoint method="POST" path="/conversations" auth="X-API-Key" authType="api-key" />
+  <p>
+    A conversation represents the overflow thread for one contact. Attach the operator identity so the
+    customer's client can show who is handling the chat, then share the returned <code>deeplink</code>.
+  </p>
+  <CodeBlock language="typescript" code={`const { conversation, contact, deeplink } = await companyWithKey.createConversation({
+  contact: {
+    externalId: 'whatsapp_5511999999999',
+    name: 'Jane Doe',
+    metadata: { phone: '+55 11 99999-9999', ticket: 'T-1234' },
+  },
+  operator: {
+    uuid: 'agent-42',
+    name: 'Maria Silva',
+    image: 'https://cdn.example.com/avatars/maria.png',
+    // or: gravatarHash: md5('maria@example.com')
+  },
+});
+
+// Send the deeplink back on the original channel (WhatsApp, Instagram, ...).`} title="create-conversation.ts" />
+
+  <h2>Step 10 — Wait for the customer to join</h2>
+  <Endpoint method="GET" path="/conversations/{conversationId}/keys" auth="X-API-Key" authType="api-key" />
+  <p>
+    The customer's browser generates a keypair when the deeplink opens and registers the public key
+    with ixblix. Prefer reacting to the <code>CUSTOMER_JOINED</code> webhook; only poll if you must.
+  </p>
+  <CodeBlock language="typescript" code={`async function waitForCustomer(conversationId: string) {
+  for (;;) {
+    const keys = await companyWithKey.getConversationKeys(conversationId);
+    if (keys.keyStatus === 'ACTIVE' && keys.customerPublicKey) {
+      return keys.customerPublicKey;
+    }
+    await new Promise((r) => setTimeout(r, 2000));
+  }
+}
+
+const customerPublicKey = await waitForCustomer(conversation.id);`} title="wait-for-customer.ts" />
+
+  <h2>Step 11 — Send an encrypted message</h2>
+  <Endpoint method="POST" path="/messages/company" auth="X-API-Key" authType="api-key" />
+  <p>
+    Encrypt the plaintext to the customer's public key with <code>encryptToRecipient</code>, then send
+    the envelope. The SDK wraps the per-message AES key both to the customer and to your own public key
+    so you can read back what you sent.
+  </p>
+  <CodeBlock language="typescript" code={`import { encryptToRecipient } from '@ixblix/sdk-js';
+
+const envelope = encryptToRecipient(
+  'Hello Jane! How can we help you today?',
+  customerPublicKey,          // customer's SPKI public key
+  operatorKey.keyId,          // your key id
+  operatorKey.publicKeySpki,  // your public key (for self-read)
+);
+
+await companyWithKey.sendCompanyMessage(
+  conversation.id,
+  envelope,
+  'text',
+  'agent-42', // operatorUuid — attributes the message to the agent
+);`} title="send-message.ts" />
+
+  <h2>Step 12 — Receive encrypted messages</h2>
+  <Endpoint method="GET" path="/messages/{conversationId}" auth="X-API-Key" authType="api-key" />
+  <p>
+    Messages are always stored as ciphertext. Decrypt them with your private key. Prefer handling
+    <code>MESSAGE_RECEIVED</code> webhooks instead of polling, then fetch the thread and decrypt.
+  </p>
+  <CodeBlock language="typescript" code={`import { decryptEnvelope } from '@ixblix/sdk-js';
+
+const messages = await companyWithKey.listMessages(conversation.id);
+
+for (const message of messages) {
+  if (!message.contentEncrypted) continue; // system/legacy plaintext
+  const plaintext = decryptEnvelope(message, operatorKey.privateKey);
+  console.log(message.senderType, message.sentAt, plaintext);
+}`} title="receive-messages.ts" />
+
+  <h2>Step 13 — Send media and rich messages</h2>
+  <Endpoint method="POST" path="/media/company" auth="X-API-Key" authType="api-key" />
+  <p>
+    Encrypt the file bytes, then upload the ciphertext with the envelope fields. Media that also carries
+    rich attachments (buttons, vCard, location, link preview) must be encrypted with a single AES key —
+    use <code>encryptMediaWithAttachments</code> so the recipient can decrypt both.
+  </p>
+  <CodeBlock language="typescript" code={`import { readFile } from 'node:fs/promises';
+import {
+  encryptMediaToRecipient,
+  encryptRichMessage,
+  encryptMediaWithAttachments,
+} from '@ixblix/sdk-js';
+
+// 1. Plain media (image/audio/document).
+const bytes = await readFile('./invoice.pdf');
+const mediaEnvelope = encryptMediaToRecipient(
+  bytes,
+  customerPublicKey,
+  operatorKey.keyId,
+  operatorKey.publicKeySpki,
+);
+await companyWithKey.sendCompanyMedia(
+  conversation.id,
+  { data: bytes, fileName: 'invoice.pdf', mimeType: 'application/pdf' },
+  mediaEnvelope,
+  'agent-42',
+);
+
+// 2. Rich text message (quick replies, buttons, ...).
+const attachments = JSON.stringify({
+  buttons: [{ type: 'reply', label: 'Open ticket', value: 'open' }],
+});
+const richEnvelope = encryptRichMessage(
+  'Your ticket is ready.',
+  attachments,
+  customerPublicKey,
+  operatorKey.keyId,
+  operatorKey.publicKeySpki,
+);
+await companyWithKey.sendCompanyMessage(
+  conversation.id,
+  richEnvelope,
+  'text',
+  'agent-42',
+  null,
+  richEnvelope.attachments,
+);
+
+// 3. Media + rich attachments sharing one AES key.
+const combined = encryptMediaWithAttachments(
+  bytes,
+  attachments,
+  customerPublicKey,
+  operatorKey.keyId,
+  operatorKey.publicKeySpki,
+);
+await companyWithKey.sendCompanyMedia(
+  conversation.id,
+  { data: bytes, fileName: 'invoice.pdf', mimeType: 'application/pdf' },
+  combined,
+  'agent-42',
+  null,
+  combined.encryptedAttachments,
+);`} title="media-and-rich.ts" />
+
+  <h2>Step 14 — Presence, read receipts and reactions</h2>
+  <CodeBlock language="typescript" code={`// Tell the customer you are typing / recording.
+await companyWithKey.reportCompanyPresence(conversation.id, 'typing');
+await companyWithKey.reportCompanyPresence(conversation.id, 'stopped');
+
+// Mark a customer message as read (the customer sees the receipt live).
+await companyWithKey.markMessageReadByCompany(conversation.id, messageId);
+
+// React with an emoji (encrypted to the customer, sent as contentType "react").
+await companyWithKey.reactToMessage(conversation.id, messageId, '👍', 'agent-42');
+// Pass an empty string to clear your reaction:
+// await companyWithKey.reactToMessage(conversation.id, messageId, '', 'agent-42');`} title="presence-read-react.ts" />
+
+  <h2>Step 15 — Close and erase a conversation</h2>
+  <p>
+    Closing ends the thread. Erasing removes the encrypted content to satisfy LGPD/data-retention rules.
+    Both are customer-token or company-driven depending on the endpoint — see the API reference.
+  </p>
+  <CodeBlock language="typescript" code={`// Report a customer-side close/presence using the conversation token.
+// (Company side uses the conversation id with its API key.)
+
+// Erasing encrypted content is a company action:
+// POST /api/conversations/{token}/erase`} title="lifecycle.ts" />
+
+  <h2>Complete example</h2>
+  <p>Putting the whole flow together in one file:</p>
+  <CodeBlock language="typescript" code={`import {
+  IxblixClient,
+  loadOrCreateOperatorKey,
+  encryptToRecipient,
+  decryptEnvelope,
+} from '@ixblix/sdk-js';
+
+const BASE_URL = 'https://api.ixblix.app';
+
+async function main() {
+  // 1. Clients
+  const integrator = new IxblixClient({
+    baseUrl: BASE_URL,
+    integratorId: process.env.IXBLIX_INTEGRATOR_ID,
+    integratorAccessToken: process.env.IXBLIX_INTEGRATOR_TOKEN,
+  });
+
+  // 2. Register + activate a company
+  const { company: created, payment } = await integrator.registerCompany({
+    name: 'Acme Support',
+    handle: 'acme',
+    planId: 'plan_starter',
+  });
+  const { apiKey } = await integrator.activateCompany(created.id, payment.transactionId);
+
+  // 3. Operator keypair + company client
+  const operatorKey = loadOrCreateOperatorKey('./.ixblix-keys');
+  const company = new IxblixClient({ baseUrl: BASE_URL, apiKey, operatorKey });
+
+  await company.registerEncryptionKey({
+    keyId: operatorKey.keyId,
+    publicKey: operatorKey.publicKeySpki,
+  });
+  await company.updateWebhook({ webhookUrl: 'https://mycrm.example.com/ixblix/webhook' });
+
+  // 4. Open a conversation and share the deeplink
+  const { conversation, deeplink } = await company.createConversation({
+    contact: { externalId: 'whatsapp_5511999999999', name: 'Jane Doe' },
+    operator: { uuid: 'agent-42', name: 'Maria Silva' },
+  });
+  console.log('Share this link:', deeplink);
+
+  // 5. Wait for the customer, then talk
+  let keys = await company.getConversationKeys(conversation.id);
+  while (keys.keyStatus !== 'ACTIVE' || !keys.customerPublicKey) {
+    await new Promise((r) => setTimeout(r, 2000));
+    keys = await company.getConversationKeys(conversation.id);
+  }
+
+  const envelope = encryptToRecipient(
+    'Hello! How can we help?',
+    keys.customerPublicKey,
+    operatorKey.keyId,
+    operatorKey.publicKeySpki,
+  );
+  await company.sendCompanyMessage(conversation.id, envelope, 'text', 'agent-42');
+
+  // 6. Read the reply
+  const messages = await company.listMessages(conversation.id);
+  for (const message of messages) {
+    if (message.contentEncrypted) {
+      console.log(decryptEnvelope(message, operatorKey.privateKey));
+    }
+  }
+}
+
+main().catch(console.error);`} title="full-flow.ts" />
+
+  <h2>Troubleshooting</h2>
+  <table>
+    <thead><tr><th>Symptom</th><th>Cause & fix</th></tr></thead>
+    <tbody>
+      <tr><td><code>401 UNAUTHORIZED</code></td><td>Missing/invalid <code>X-API-Key</code> or integrator credentials.</td></tr>
+      <tr><td><code>403 FORBIDDEN</code></td><td>Company exists but is not yet activated.</td></tr>
+      <tr><td><code>409 KEYS_NOT_ACTIVE</code></td><td>You tried to encrypt before the customer joined. Wait for <code>CUSTOMER_JOINED</code>.</td></tr>
+      <tr><td><code>402 INSUFFICIENT_BALANCE</code></td><td>Top up with <code>purchaseCredits</code> and retry.</td></tr>
+      <tr><td>Webhook signature fails</td><td>Verify against the <strong>raw</strong> body bytes, not a re-serialized object.</td></tr>
+    </tbody>
+  </table>
+
+  <h2>Next steps</h2>
+  <ul>
+    <li><a href="/docs/sdk">JavaScript SDK reference</a> — every method and crypto helper.</li>
+    <li><a href="/docs/api-reference">REST API reference</a> — every exposed endpoint.</li>
+    <li><a href="/docs/e2e-encryption">End-to-End Encryption</a> — how the envelope works.</li>
+    <li><a href="/docs/webhooks">Webhooks</a> — event payloads and verification.</li>
   </ul>
 
   <PageNav

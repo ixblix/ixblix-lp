@@ -1,0 +1,425 @@
+---
+import DocsLayout from '../../layouts/DocsLayout.astro';
+import CodeBlock from '../../components/CodeBlock.astro';
+import Endpoint from '../../components/Endpoint.astro';
+import PageNav from '../../components/PageNav.astro';
+import { t } from '../../i18n';
+import type { Locale } from '../../i18n/config';
+
+const locale: Locale = 'en';
+---
+
+<DocsLayout>
+  <h1>REST API Reference</h1>
+  <p class="lead">
+    Every endpoint exposed by the ixblix public API. Base URL: <code>https://api.ixblix.app</code>.
+    All paths are prefixed with <code>/api</code>. Responses are JSON. Errors follow the
+    <a href="/docs/errors">standard error format</a>.
+  </p>
+
+  <div class="callout callout-info">
+    <div class="callout-title">Authentication</div>
+    <p>
+      <span class="badge badge-api-key">X-API-Key</span> company-scoped endpoints.
+      <span class="badge badge-integrator">HTTP Basic</span> integrator-scoped endpoints.
+      <span class="badge badge-token">Token</span> customer-facing endpoints (no header needed).
+      <span class="badge badge-public">Public</span> unauthenticated.
+    </p>
+  </div>
+
+  <h2>Table of contents</h2>
+  <ul>
+    <li><a href="#integrators">Integrators</a></li>
+    <li><a href="#companies">Companies — onboarding</a></li>
+    <li><a href="#company-profile">Companies — profile &amp; customization</a></li>
+    <li><a href="#encryption">Encryption keys</a></li>
+    <li><a href="#conversations">Conversations</a></li>
+    <li><a href="#messages">Messages</a></li>
+    <li><a href="#media">Media</a></li>
+    <li><a href="#contacts">Contacts</a></li>
+    <li><a href="#payments">Payments &amp; credits</a></li>
+    <li><a href="#plans">Plans</a></li>
+    <li><a href="#key-transfer">Key transfer</a></li>
+    <li><a href="#webhooks-relay">Webhooks relay</a></li>
+    <li><a href="#installation">Installation</a></li>
+  </ul>
+
+  <h2 id="integrators">Integrators</h2>
+
+  <Endpoint method="POST" path="/integrators/register" auth="HTTP Basic" authType="integrator" />
+  <p>Register a new integrator platform. Three-way handshake via <code>callbackUrl</code>.</p>
+  <CodeBlock language="json" code={`// Request
+{
+  "name": "My CRM",
+  "hostname": "mycrm.example.com",
+  "callbackUrl": "https://mycrm.example.com/ixblix/callback",
+  "force": false,
+  "subscriptionId": "asaas:sub_xxx"
+}
+
+// Response 200
+{ "success": true, "message": "Registration challenge sent" }`} title="POST /integrators/register" />
+
+  <Endpoint method="GET" path="/integrators/profile" auth="HTTP Basic" authType="integrator" />
+  <p>Fetch the authenticated integrator's profile.</p>
+
+  <h2 id="companies">Companies — onboarding</h2>
+
+  <Endpoint method="POST" path="/companies/register" auth="HTTP Basic" authType="integrator" />
+  <p>Register a company (keyless). Returns payment instructions.</p>
+  <CodeBlock language="json" code={`// Request
+{
+  "name": "Acme Support",
+  "handle": "acme",
+  "planId": "plan_starter",
+  "email": "billing@acme.example",
+  "taxId": "12345678000199",
+  "confirmationWebhookUrl": "https://mycrm.example.com/ixblix/activated"
+}
+
+// Response 200
+{
+  "company": { "id": "...", "name": "...", "handle": "acme", "status": "PENDING_PAYMENT" },
+  "payment": {
+    "transactionId": "txn_xxx",
+    "provider": "asaas",
+    "amountCents": 4990,
+    "currency": "BRL",
+    "confirmationUrl": "...",
+    "checkoutUrl": "https://checkout.asaas.com/...",
+    "status": "PENDING"
+  }
+}`} title="POST /companies/register" />
+
+  <Endpoint method="POST" path="/companies/{id}/activate/{transactionId}" auth="HTTP Basic" authType="integrator" />
+  <p>Activate a company after payment confirmation. Returns the API key.</p>
+  <CodeBlock language="json" code={`// Response 200
+{ "apiKey": "smci_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx", "status": "ACTIVE" }`} title="POST /companies/{id}/activate/{transactionId}" />
+
+  <Endpoint method="GET" path="/companies/payment/{transactionId}" auth="Public" authType="public" />
+  <p>Fetch payment status for a transaction. Safe — the transactionId is in the URL.</p>
+
+  <Endpoint method="GET" path="/companies" auth="HTTP Basic" authType="integrator" />
+  <p>List all companies under the authenticated integrator.</p>
+
+  <h2 id="company-profile">Companies — profile &amp; customization</h2>
+
+  <Endpoint method="GET" path="/companies/profile" auth="X-API-Key" authType="api-key" />
+  <p>Fetch the authenticated company's profile, including white-label customization.</p>
+  <CodeBlock language="json" code={`// Response 200
+{
+  "id": "...",
+  "name": "Acme Support",
+  "handle": "acme",
+  "status": "ACTIVE",
+  "websiteUrl": "https://acme.example",
+  "customizations": {
+    "id": "...",
+    "brandName": "Acme",
+    "logoUrl": "...",
+    "rectangularLogoUrl": "...",
+    "squareIconUrl": "...",
+    "primaryColor": "#2563eb",
+    "faviconUrl": "...",
+    "websiteUrl": "https://acme.example",
+    "welcomeMessage": "Hello! How can we help?"
+  }
+}`} title="GET /companies/profile" />
+
+  <Endpoint method="GET" path="/companies/balance" auth="X-API-Key" authType="api-key" />
+  <p>Fetch the company's prepaid balance and plan state.</p>
+
+  <Endpoint method="PUT" path="/companies/customization" auth="X-API-Key" authType="api-key" />
+  <p>Update white-label customization (brand name, logos, colors, welcome message).</p>
+
+  <Endpoint method="POST" path="/companies/branding" auth="X-API-Key" authType="api-key" />
+  <p>Upload branding assets (square icon and/or rectangular logo) as multipart/form-data.</p>
+
+  <Endpoint method="PUT" path="/companies/webhook" auth="X-API-Key" authType="api-key" />
+  <p>Set or rotate the webhook endpoint. Returns the HMAC secret once.</p>
+  <CodeBlock language="json" code={`// Request
+{ "webhookUrl": "https://mycrm.example.com/ixblix/webhook", "rotateSecret": true }
+
+// Response 200
+{ "webhookUrl": "...", "webhookSecret": "whsec_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx" }`} title="PUT /companies/webhook" />
+
+  <Endpoint method="PUT" path="/companies/configuration" auth="X-API-Key" authType="api-key" />
+  <p>Update company configuration (name, website URL, etc.).</p>
+
+  <Endpoint method="GET" path="/companies/public/{handle}" auth="Public" authType="public" />
+  <p>Fetch a company's public profile by handle (used by the customer web app).</p>
+
+  <h2 id="encryption">Encryption keys</h2>
+
+  <Endpoint method="PUT" path="/companies/encryption-key" auth="X-API-Key" authType="api-key" />
+  <p>Register or rotate the company's RSA public key for E2EE.</p>
+  <CodeBlock language="json" code={`// Request
+{ "keyId": "xxxxxxxxxxxxxxxx", "publicKey": "base64-spki-der..." }
+
+// Response 200
+{
+  "id": "...",
+  "keyId": "xxxxxxxxxxxxxxxx",
+  "publicKey": "...",
+  "status": "ACTIVE",
+  "activatedAt": "...",
+  "retiredAt": null,
+  "createdAt": "..."
+}`} title="PUT /companies/encryption-key" />
+
+  <Endpoint method="GET" path="/companies/encryption-key" auth="X-API-Key" authType="api-key" />
+  <p>Fetch the currently active company encryption key.</p>
+
+  <h2 id="conversations">Conversations</h2>
+
+  <Endpoint method="POST" path="/conversations" auth="X-API-Key" authType="api-key" />
+  <p>Create an overflow conversation for a contact. Returns a deeplink to share.</p>
+  <CodeBlock language="json" code={`// Request
+{
+  "contact": {
+    "externalId": "whatsapp_5511999999999",
+    "name": "Jane Doe",
+    "metadata": { "phone": "+55 11 99999-9999" }
+  },
+  "operator": {
+    "uuid": "agent-42",
+    "name": "Maria Silva",
+    "image": "https://cdn.example.com/avatars/maria.png"
+  }
+}
+
+// Response 200
+{
+  "conversation": { "id": "...", "token": "...", "status": "ACTIVE", "keyStatus": "AWAITING_CUSTOMER", "createdAt": "..." },
+  "contact": { "id": "...", "externalId": "...", "name": "Jane Doe", "consentStatus": "PENDING" },
+  "deeplink": "https://app.ixblix.app/c/...",
+  "company": { "id": "...", "name": "Acme", "customizations": { ... } },
+  "operator": { "uuid": "agent-42", "name": "Maria Silva" }
+}`} title="POST /conversations" />
+
+  <Endpoint method="POST" path="/conversations/by-key" auth="Public" authType="token" />
+  <p>List conversations by customer public key (used during key transfer).</p>
+
+  <Endpoint method="GET" path="/conversations/{token}" auth="Token" authType="token" />
+  <p>Fetch a conversation by its token (customer-facing).</p>
+
+  <Endpoint method="POST" path="/conversations/{token}/close" auth="Token" authType="token" />
+  <p>Close a conversation (customer-side).</p>
+
+  <Endpoint method="POST" path="/conversations/{token}/key" auth="Token" authType="token" />
+  <p>Register the customer's public key (called when the customer opens the deeplink).</p>
+
+  <Endpoint method="POST" path="/conversations/{token}/erase" auth="Token" authType="token" />
+  <p>Erase the encrypted content of a conversation (LGPD/data retention).</p>
+
+  <Endpoint method="POST" path="/conversations/{ref}/presence" auth="Mixed" authType="token" />
+  <p>
+    Unified presence route. With <code>X-API-Key</code> (ref = conversation id), emits a Socket.io
+    <code>presence</code> event to the customer. Without API key (ref = deeplink token), emits a
+    <code>TYPING</code>/<code>RECORDING</code>/<code>CHAT_CLOSED</code> webhook to the operator.
+  </p>
+
+  <Endpoint method="GET" path="/conversations/{conversationId}/keys" auth="X-API-Key" authType="api-key" />
+  <p>Fetch the E2EE key state of a conversation (operator view).</p>
+
+  <Endpoint method="PUT" path="/conversations/{conversationId}/operator" auth="X-API-Key" authType="api-key" />
+  <p>Update the operator identity attached to a conversation.</p>
+
+  <h2 id="messages">Messages</h2>
+
+  <Endpoint method="POST" path="/messages/company" auth="X-API-Key" authType="api-key" />
+  <p>Send an encrypted message from the company to the contact.</p>
+  <CodeBlock language="json" code={`// Request
+{
+  "conversationId": "...",
+  "content": "base64-ciphertext...",
+  "contentType": "text",
+  "iv": "base64-iv",
+  "authTag": "base64-auth-tag",
+  "encryptedKey": "base64-wrapped-key",
+  "selfEncryptedKey": "base64-wrapped-key",
+  "keyId": "xxxxxxxxxxxxxxxx",
+  "operatorUuid": "agent-42",
+  "replyToId": "...",
+  "attachments": "encrypted-json-blob"
+}
+
+// Response 200
+{ "id": "...", "conversationId": "...", "senderType": "COMPANY", "content": "...", "contentEncrypted": true, ... }`} title="POST /messages/company" />
+
+  <Endpoint method="POST" path="/messages/contact" auth="Token" authType="token" />
+  <p>Send an encrypted message from the contact to the company.</p>
+
+  <Endpoint method="POST" path="/messages/company/read" auth="X-API-Key" authType="api-key" />
+  <p>Mark a contact-sent message as read by the operator. Emits <code>message_read</code> Socket.io event.</p>
+
+  <Endpoint method="POST" path="/messages/contact/read" auth="Token" authType="token" />
+  <p>Mark a company-sent message as read by the contact. Emits <code>MESSAGE_READ</code> webhook.</p>
+
+  <Endpoint method="GET" path="/messages/{conversationId}" auth="X-API-Key" authType="api-key" />
+  <p>List all messages of a conversation (content is always ciphertext when encrypted).</p>
+
+  <h2 id="media">Media</h2>
+
+  <Endpoint method="POST" path="/media/company" auth="X-API-Key" authType="api-key" />
+  <p>Upload encrypted media from the company (multipart/form-data).</p>
+  <CodeBlock language="bash" code={`curl -X POST https://api.ixblix.app/api/media/company \\
+  -H "X-API-Key: smci_xxxx" \\
+  -F "conversationId=..." \\
+  -F "file=@invoice.pdf" \\
+  -F "iv=..." \\
+  -F "authTag=..." \\
+  -F "encryptedKey=..." \\
+  -F "selfEncryptedKey=..." \\
+  -F "keyId=..." \\
+  -F "operatorUuid=agent-42"`} title="Upload media" />
+
+  <Endpoint method="POST" path="/media/contact" auth="Token" authType="token" />
+  <p>Upload encrypted media from the contact.</p>
+
+  <Endpoint method="GET" path="/media/{mediaId}" auth="X-API-Key" authType="api-key" />
+  <p>Fetch media metadata (envelope + file info).</p>
+
+  <Endpoint method="GET" path="/media/contact/{mediaId}" auth="Token" authType="token" />
+  <p>Fetch media metadata (customer-facing).</p>
+
+  <Endpoint method="GET" path="/media/{mediaId}/content" auth="X-API-Key" authType="api-key" />
+  <p>Download the raw encrypted bytes of a media file.</p>
+
+  <Endpoint method="GET" path="/media/contact/{mediaId}/content" auth="Token" authType="token" />
+  <p>Download the raw encrypted bytes (customer-facing).</p>
+
+  <h2 id="contacts">Contacts</h2>
+
+  <Endpoint method="GET" path="/contacts/{token}" auth="Token" authType="token" />
+  <p>Fetch a contact by conversation token.</p>
+
+  <Endpoint method="POST" path="/contacts/{token}/consent" auth="Token" authType="token" />
+  <p>Update the contact's consent status (LGPD).</p>
+  <CodeBlock language="json" code={`// Request
+{ "consentStatus": "GRANTED" }
+
+// Response 200
+{ "id": "...", "externalId": "...", "consentStatus": "GRANTED", "consentedAt": "..." }`} title="POST /contacts/{token}/consent" />
+
+  <h2 id="payments">Payments &amp; credits</h2>
+
+  <Endpoint method="GET" path="/payment/providers" auth="Public" authType="public" />
+  <p>List available payment providers.</p>
+
+  <Endpoint method="GET" path="/payment/checkout/{transactionId}/options" auth="Public" authType="public" />
+  <p>Fetch available payment instruments for a checkout.</p>
+
+  <Endpoint method="POST" path="/payment/checkout/{transactionId}/card" auth="Public" authType="public" />
+  <p>Pay a checkout with a credit card.</p>
+
+  <Endpoint method="POST" path="/payment/checkout/{transactionId}/pix-automatic" auth="Public" authType="public" />
+  <p>Pay a checkout with Pix Automático.</p>
+
+  <Endpoint method="GET" path="/payment/checkout/{transactionId}/status" auth="Public" authType="public" />
+  <p>Fetch the status of a checkout transaction.</p>
+
+  <Endpoint method="POST" path="/payment/webhooks/{provider}" auth="Public" authType="public" />
+  <p>Gateway callback endpoint. Mounted with <code>express.raw</code> for signature verification.</p>
+
+  <Endpoint method="POST" path="/companies/credits/purchase" auth="X-API-Key" authType="api-key" />
+  <p>Purchase prepaid credits for the authenticated company.</p>
+
+  <Endpoint method="GET" path="/companies/credits/purchases" auth="X-API-Key" authType="api-key" />
+  <p>List the company's credit purchases.</p>
+
+  <Endpoint method="POST" path="/companies/payment-methods/setup" auth="X-API-Key" authType="api-key" />
+  <p>Start a payment method setup flow (e.g. add a card).</p>
+
+  <Endpoint method="POST" path="/companies/payment-methods" auth="X-API-Key" authType="api-key" />
+  <p>Register a payment method after setup.</p>
+
+  <Endpoint method="GET" path="/companies/payment-methods" auth="X-API-Key" authType="api-key" />
+  <p>List stored payment methods (default first).</p>
+
+  <Endpoint method="PUT" path="/companies/payment-methods/{id}/default" auth="X-API-Key" authType="api-key" />
+  <p>Set a payment method as the default.</p>
+
+  <Endpoint method="DELETE" path="/companies/payment-methods/{id}" auth="X-API-Key" authType="api-key" />
+  <p>Delete a payment method.</p>
+
+  <Endpoint method="GET" path="/companies/payment-change/options" auth="X-API-Key" authType="api-key" />
+  <p>Fetch available payment instruments for re-subscribing or switching methods.</p>
+
+  <Endpoint method="POST" path="/companies/payment-change/start" auth="X-API-Key" authType="api-key" />
+  <p>Start a payment change checkout. Returns a hosted checkout URL.</p>
+
+  <h2 id="plans">Plans</h2>
+
+  <Endpoint method="GET" path="/plans" auth="HTTP Basic" authType="integrator" />
+  <p>List all active subscription plans.</p>
+  <CodeBlock language="json" code={`// Response 200
+[
+  {
+    "id": "plan_starter",
+    "name": "Starter",
+    "description": "Up to 100 conversations/month",
+    "billingType": "CONVERSATIONS",
+    "includedConversations": 100,
+    "includedMessages": null,
+    "durationDays": 30,
+    "priceCents": 4990,
+    "overagePriceCents": 50,
+    "isActive": true,
+    "isPublic": true,
+    "createdAt": "..."
+  }
+]`} title="GET /plans" />
+
+  <h2 id="key-transfer">Key transfer</h2>
+  <p>
+    Key transfer allows a customer to migrate their encryption key to a new device. The flow is
+    unauthenticated and rate-limited.
+  </p>
+
+  <Endpoint method="POST" path="/key-transfer" auth="Public" authType="public" />
+  <p>Create a new key transfer request.</p>
+
+  <Endpoint method="GET" path="/key-transfer/{transferId}" auth="Public" authType="public" />
+  <p>Fetch a key transfer request.</p>
+
+  <Endpoint method="DELETE" path="/key-transfer/{transferId}" auth="Public" authType="public" />
+  <p>Delete a key transfer request.</p>
+
+  <Endpoint method="POST" path="/key-transfer/{transferId}/confirm" auth="Public" authType="public" />
+  <p>Confirm a key transfer (customer approves on the new device).</p>
+
+  <Endpoint method="GET" path="/key-transfer/{transferId}/status" auth="Public" authType="public" />
+  <p>Fetch the status of a key transfer.</p>
+
+  <h2 id="webhooks-relay">Webhooks relay</h2>
+
+  <Endpoint method="POST" path="/webhooks/original-channel" auth="X-API-Key" authType="api-key" />
+  <p>Relay a message from the original channel (WhatsApp, Instagram, etc.) into ixblix.</p>
+  <CodeBlock language="json" code={`// Request
+{
+  "conversationId": "...",
+  "content": "base64-ciphertext",
+  "iv": "...",
+  "authTag": "...",
+  "encryptedKey": "...",
+  "selfEncryptedKey": "...",
+  "keyId": "...",
+  "metadata": { "channelMessageId": "..." }
+}`} title="POST /webhooks/original-channel" />
+
+  <h2 id="installation">Installation</h2>
+
+  <Endpoint method="GET" path="/installation" auth="Public" authType="public" />
+  <p>Fetch the installation configuration (used by the customer web app to discover the API).</p>
+
+  <h2>Interactive documentation</h2>
+  <p>
+    The full OpenAPI spec is served at <a href="https://dev.ixblix.app" target="_blank" rel="noopener noreferrer">dev.ixblix.app</a>
+    with interactive try-it-out. The spec auto-detects the browser language (English, Portuguese, Spanish).
+  </p>
+
+  <PageNav
+    prev={{ titleKey: 'nav.sdk', path: 'sdk' }}
+  />
+</DocsLayout>

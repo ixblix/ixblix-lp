@@ -1,0 +1,24 @@
+---
+/**
+ * Renders a REST endpoint as a method chip + path + auth badge.
+ * Used across the API reference and guide pages.
+ */
+interface Props {
+  /** HTTP method: GET, POST, PUT, PATCH, DELETE. */
+  method: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
+  /** Endpoint path, e.g. `/conversations/{token}`. */
+  path: string;
+  /** Auth label rendered as a badge (omit for none). */
+  auth?: string;
+  /** Badge variant. Defaults to `public`. */
+  authType?: 'api-key' | 'integrator' | 'public' | 'token';
+}
+
+const { method, path, auth, authType = 'public' } = Astro.props;
+---
+
+<div class="endpoint">
+  <span class={`method method-${method.toLowerCase()}`}>{method}</span>
+  <code>{path}</code>
+  {auth && <span class={`badge badge-${authType}`}>{auth}</span>}
+</div>

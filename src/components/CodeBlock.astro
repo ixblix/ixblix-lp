@@ -1,14 +1,26 @@
 ---
-interface Props {
-  code: string;
-  language: string;
-  title?: string;
-}
-
+import { Code } from 'astro:components';
 import { t, getLocaleFromUrl } from '../i18n';
 import type { Locale } from '../i18n/config';
 
-const { code, language, title } = Astro.props;
+interface Props {
+  /** The source code to render (server-side highlighted with Shiki). */
+  code: string;
+  /** Shiki language id. Defaults to `text`. */
+  language?: string;
+  /** Label shown in the header. Defaults to the language name. */
+  title?: string;
+  /** Shiki theme. Defaults to the branded dark theme. */
+  theme?: string;
+}
+
+const {
+  code,
+  language = 'text',
+  title,
+  theme = 'github-dark-default',
+} = Astro.props;
+
 const locale = getLocaleFromUrl(Astro.url) as Locale;
 const copyLabel = t(locale, 'common.copy');
 const copiedLabel = t(locale, 'common.copied');
@@ -16,12 +28,12 @@ const copiedLabel = t(locale, 'common.copied');
 
 <div class="code-block-wrapper">
   <div class="code-block-header">
-    <span>{title ?? language}</span>
+    <span class="code-block-title">{title ?? language}</span>
     <button class="code-block-copy" type="button" data-copy={copyLabel} data-copied={copiedLabel}>
       {copyLabel}
     </button>
   </div>
-  <pre><code class={`language-${language}`}>{code}</code></pre>
+  <Code code={code} lang={language} theme={theme} />
 </div>
 
 <script>

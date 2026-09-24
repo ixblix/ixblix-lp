@@ -476,3 +476,10 @@ Common status codes: `400` (Bad Request), `401` (Unauthorized), `404` (Not Found
 ## Interactive API Documentation
 
 Full OpenAPI spec with interactive testing available at: `https://dev.ixblix.app`
+
+## Full Documentation
+
+For complete API reference with all endpoints, request/response examples, and detailed parameter descriptions, see:
+- **REST API Reference**: https://ixblix.app/docs/api-reference
+- **SDK Reference**: https://ixblix.app/docs/sdk
+- **Quick Start Guide**: https://ixblix.app/docs/quickstart
