@@ -260,9 +260,9 @@ node -e "
 const crypto = require('crypto');
 const { encryptRichMessage } = require('@ixblix/sdk-js');
 
-const attachments = JSON.stringify({
+const attachments = {
   operator: { uuid: 'agent-42', name: 'Maria Silva', gravatarHash: 'md5-of-email' }
-});
+};
 const envelope = encryptRichMessage(
   'Hello!', attachments,
   customerPublicKey, operatorKey.keyId, operatorKey.publicKeySpki

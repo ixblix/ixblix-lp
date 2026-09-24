@@ -262,19 +262,17 @@ const customerPublicKey = await waitForCustomer(conversation.id);`} title="wait-
   </p>
   <CodeBlock language="typescript" code={`import { encryptRichMessage } from '@ixblix/sdk-js';
 
-// Embed the operator identity in the attachments JSON so the customer
+// Embed the operator identity in the attachments object so the customer
 // client can render the correct avatar per message.
-const attachments = JSON.stringify({
-  operator: {
-    uuid: 'agent-42',
-    name: 'Maria Silva',
-    gravatarHash: md5('maria@example.com'),
-  },
-});
-
 const envelope = encryptRichMessage(
   'Hello Jane! How can we help you today?',
-  attachments,
+  {
+    operator: {
+      uuid: 'agent-42',
+      name: 'Maria Silva',
+      gravatarHash: md5('maria@example.com'),
+    },
+  },
   customerPublicKey,          // customer's SPKI public key
   operatorKey.keyId,          // your key id
   operatorKey.publicKeySpki,  // your public key (for self-read)
@@ -335,12 +333,11 @@ await companyWithKey.sendCompanyMedia(
 );
 
 // 2. Rich text message (quick replies, buttons, ...).
-const attachments = JSON.stringify({
-  buttons: [{ type: 'reply', label: 'Open ticket', value: 'open' }],
-});
 const richEnvelope = encryptRichMessage(
   'Your ticket is ready.',
-  attachments,
+  {
+    buttons: [{ type: 'reply', label: 'Open ticket', value: 'open' }],
+  },
   customerPublicKey,
   operatorKey.keyId,
   operatorKey.publicKeySpki,
@@ -357,7 +354,9 @@ await companyWithKey.sendCompanyMessage(
 // 3. Media + rich attachments sharing one AES key.
 const combined = encryptMediaWithAttachments(
   bytes,
-  attachments,
+  {
+    buttons: [{ type: 'reply', label: 'Open ticket', value: 'open' }],
+  },
   customerPublicKey,
   operatorKey.keyId,
   operatorKey.publicKeySpki,
@@ -450,16 +449,15 @@ async function main() {
 
   // Embed operator identity in the encrypted attachments so the customer
   // client can render the correct avatar per message.
-  const attachments = JSON.stringify({
-    operator: {
-      uuid: 'agent-42',
-      name: 'Maria Silva',
-      gravatarHash: md5('maria@example.com'),
-    },
-  });
   const envelope = encryptRichMessage(
     'Hello! How can we help?',
-    attachments,
+    {
+      operator: {
+        uuid: 'agent-42',
+        name: 'Maria Silva',
+        gravatarHash: md5('maria@example.com'),
+      },
+    },
     keys.customerPublicKey,
     operatorKey.keyId,
     operatorKey.publicKeySpki,

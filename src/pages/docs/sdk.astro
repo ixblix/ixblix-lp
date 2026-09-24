@@ -381,7 +381,7 @@ const plaintext = decryptEnvelope(
 
 const result = encryptRichMessage(
   content: string,
-  attachments: string | null, // JSON with buttons, vcard, location, linkPreview
+  attachments: MessageAttachments | null, // typed object — stringified internally
   recipientPublicKeySpki: string,
   senderKeyId: string,
   senderPublicKeySpki: string,
@@ -394,6 +394,14 @@ const result = encryptRichMessage(
   selfEncryptedKey: string,
   keyId: string,
 }
+
+// MessageAttachments = {
+//   operator?: { uuid?, name?, image?, gravatarHash? },
+//   buttons?: MessageButton[],
+//   vcard?: MessageVcard,
+//   location?: MessageLocation,
+//   linkPreview?: MessageLinkPreview,
+// }
 
 // Encrypts content and attachments with different IVs but the same AES key.
 // The attachments blob embeds its own iv and authTag.`} title="encryptRichMessage" />
@@ -428,7 +436,7 @@ const envelope = encryptMediaToRecipient(
 
 const result = encryptMediaWithAttachments(
   fileBytes: Uint8Array,
-  attachments: string, // JSON
+  attachments: MessageAttachments, // typed object — stringified internally
   recipientPublicKeySpki: string,
   senderKeyId: string,
   senderPublicKeySpki: string,

@@ -731,7 +731,7 @@ const envelope = encryptToRecipient(
 );
 // decryptEnvelope(message, senderPrivateKey)
 const plaintext = decryptEnvelope(message, senderPrivateKey);
-// encryptRichMessage(plaintext, attachments, recipientPublicKeySpki, senderKeyId, senderPublicKeySpki)
+// encryptRichMessage(plaintext, attachments: MessageAttachments | null, recipientPublicKeySpki, senderKeyId, senderPublicKeySpki)
 const richEnvelope = encryptRichMessage(
   plaintext,
   attachments,
@@ -748,7 +748,7 @@ const mediaEnvelope = encryptMediaToRecipient(
   senderKeyId,
   senderPublicKeySpki,
 );
-// encryptMediaWithAttachments(fileBuffer, attachments, recipientPublicKeySpki, senderKeyId, senderPublicKeySpki)
+// encryptMediaWithAttachments(fileBuffer, attachments: MessageAttachments, recipientPublicKeySpki, senderKeyId, senderPublicKeySpki)
 const mediaWithAttachments = encryptMediaWithAttachments(
   fileBuffer,
   attachments,
