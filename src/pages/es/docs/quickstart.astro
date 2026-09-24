@@ -256,14 +256,25 @@ const customerPublicKey = await waitForCustomer(conversation.id);`} title="wait-
   <h2>Step 11 — Send an encrypted message</h2>
   <Endpoint method="POST" path="/messages/company" auth="X-API-Key" authType="api-key" />
   <p>
-    Encrypt the plaintext to the customer's public key with <code>encryptToRecipient</code>, then send
+    Encrypt the plaintext to the customer's public key with <code>encryptRichMessage</code>, embedding the operator identity in the attachments JSON, then send
     the envelope. The SDK wraps the per-message AES key both to the customer and to your own public key
     so you can read back what you sent.
   </p>
-  <CodeBlock language="typescript" code={`import { encryptToRecipient } from '@ixblix/sdk-js';
+  <CodeBlock language="typescript" code={`import { encryptRichMessage } from '@ixblix/sdk-js';
 
-const envelope = encryptToRecipient(
+// Embed the operator identity in the attachments JSON so the customer
+// client can render the correct avatar per message.
+const attachments = JSON.stringify({
+  operator: {
+    uuid: 'agent-42',
+    name: 'Maria Silva',
+    gravatarHash: md5('maria@example.com'),
+  },
+});
+
+const envelope = encryptRichMessage(
   'Hello Jane! How can we help you today?',
+  attachments,
   customerPublicKey,          // customer's SPKI public key
   operatorKey.keyId,          // your key id
   operatorKey.publicKeySpki,  // your public key (for self-read)
@@ -273,7 +284,9 @@ await companyWithKey.sendCompanyMessage(
   conversation.id,
   envelope,
   'text',
-  'agent-42', // operatorUuid — attributes the message to the agent
+  'agent-42', // operatorUuid
+  null,       // replyToId
+  envelope.attachments, // encrypted attachments with operator identity
 );`} title="send-message.ts" />
 
   <h2>Step 12 — Receive encrypted messages</h2>
@@ -387,10 +400,12 @@ await companyWithKey.reactToMessage(conversation.id, messageId, '👍', 'agent-4
   <CodeBlock language="typescript" code={`import {
   IxblixClient,
   loadOrCreateOperatorKey,
-  encryptToRecipient,
+  encryptRichMessage,
   decryptEnvelope,
 } from '@ixblix/sdk-js';
+import { createHash } from 'crypto';
 
+const md5 = (s: string) => createHash('md5').update(s).digest('hex');
 const BASE_URL = 'https://api.ixblix.app';
 
 async function main() {
@@ -433,13 +448,25 @@ async function main() {
     keys = await company.getConversationKeys(conversation.id);
   }
 
-  const envelope = encryptToRecipient(
+  // Embed operator identity in the encrypted attachments so the customer
+  // client can render the correct avatar per message.
+  const attachments = JSON.stringify({
+    operator: {
+      uuid: 'agent-42',
+      name: 'Maria Silva',
+      gravatarHash: md5('maria@example.com'),
+    },
+  });
+  const envelope = encryptRichMessage(
     'Hello! How can we help?',
+    attachments,
     keys.customerPublicKey,
     operatorKey.keyId,
     operatorKey.publicKeySpki,
   );
-  await company.sendCompanyMessage(conversation.id, envelope, 'text', 'agent-42');
+  await company.sendCompanyMessage(
+    conversation.id, envelope, 'text', 'agent-42', null, envelope.attachments,
+  );
 
   // 6. Read the reply
   const messages = await company.listMessages(conversation.id);

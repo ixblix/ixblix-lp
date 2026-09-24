@@ -254,6 +254,30 @@ console.log(JSON.stringify({
 "
 
 # Send encrypted message
+# The operator identity is embedded in the encrypted attachments JSON.
+# Use encryptRichMessage to encrypt content + attachments (with operator) together.
+node -e "
+const crypto = require('crypto');
+const { encryptRichMessage } = require('@ixblix/sdk-js');
+
+const attachments = JSON.stringify({
+  operator: { uuid: 'agent-42', name: 'Maria Silva', gravatarHash: 'md5-of-email' }
+});
+const envelope = encryptRichMessage(
+  'Hello!', attachments,
+  customerPublicKey, operatorKey.keyId, operatorKey.publicKeySpki
+);
+console.log(JSON.stringify({
+  content: envelope.content,
+  iv: envelope.iv,
+  authTag: envelope.authTag,
+  encryptedKey: envelope.encryptedKey,
+  selfEncryptedKey: envelope.selfEncryptedKey,
+  keyId: envelope.keyId,
+  attachments: envelope.attachments
+}));
+"
+
 curl -X POST https://api.ixblix.app/api/messages/company \
   -H "X-API-Key: smci_xxxx" \
   -H "Content-Type: application/json" \
@@ -265,7 +289,9 @@ curl -X POST https://api.ixblix.app/api/messages/company \
     "authTag": "base64-auth-tag",
     "encryptedKey": "base64-rsa-wrapped-aes-key-to-customer",
     "selfEncryptedKey": "base64-rsa-wrapped-aes-key-to-self",
-    "keyId": "operator-key-1"
+    "keyId": "operator-key-1",
+    "operatorUuid": "agent-42",
+    "attachments": "base64-encrypted-json-with-operator-identity"
   }'
 ```
 
@@ -338,12 +364,17 @@ All webhook events use a flat JSON structure with an `event` field indicating th
 
 ## Rich Messages
 
-Operators may attach structured resources to a message: inline buttons, vCard, location and link preview. These are sent in the encrypted `attachments` field as a JSON string. The operator encrypts the attachments JSON using the same AES key as the message content.
+Operators may attach structured resources to a message: inline buttons, vCard, location and link preview. These are sent in the encrypted `attachments` field as a JSON string. The operator identity (name, image, gravatarHash) is also embedded here so the customer client can render the correct avatar per message. The operator encrypts the attachments JSON using the same AES key as the message content.
 
-Plaintext `attachments` format (send one or more of `buttons`, `vcard`):
+Plaintext `attachments` format (send one or more of `operator`, `buttons`, `vcard`):
 
 ```json
 {
+  "operator": {
+    "uuid": "agent-42",
+    "name": "Maria Silva",
+    "gravatarHash": "md5-of-operator-email"
+  },
   "buttons": [
     { "type": "reply", "label": "Yes" },
     { "type": "reply", "label": "No" },
@@ -480,6 +511,7 @@ Full OpenAPI spec with interactive testing available at: `https://dev.ixblix.app
 ## Full Documentation
 
 For complete API reference with all endpoints, request/response examples, and detailed parameter descriptions, see:
+
 - **REST API Reference**: https://ixblix.app/docs/api-reference
 - **SDK Reference**: https://ixblix.app/docs/sdk
 - **Quick Start Guide**: https://ixblix.app/docs/quickstart

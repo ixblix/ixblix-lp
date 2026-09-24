@@ -45,7 +45,9 @@ const locale: Locale = 'pt';
       <tr><td><code>encryptedKey</code></td><td>Sim</td><td>Chave AES envolvida pela chave RSA pública do cliente.</td></tr>
       <tr><td><code>selfEncryptedKey</code></td><td>Sim</td><td>Chave AES envolvida pela própria chave RSA do operador.</td></tr>
       <tr><td><code>keyId</code></td><td>Sim</td><td>Identificador da chave pública do operador.</td></tr>
+      <tr><td><code>operatorUuid</code></td><td>Não</td><td>Identificador do operador que envia esta mensagem. Usa o operador atual da conversa se omitido.</td></tr>
       <tr><td><code>replyToId</code></td><td>Não</td><td>ID da mensagem a qual esta responde.</td></tr>
+      <tr><td><code>attachments</code></td><td>Não</td><td>String JSON criptografada com anexos ricos (botões, vcard, localização). A identidade do operador (nome, imagem, gravatarHash) deve ser incorporada pelo remetente neste JSON antes da criptografia para o cliente renderizar o avatar correto por mensagem.</td></tr>
     </tbody>
   </table>
 

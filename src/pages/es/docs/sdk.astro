@@ -198,10 +198,13 @@ const client = new IxblixClient({
   contentType?: 'text' | 'react', // default 'text'
   operatorUuid?: string,
   replyToId?: string | null,
-  attachments?: string | null, // encrypted JSON
+  attachments?: string | null, // encrypted JSON — embed operator identity here
 ): Promise<Message>
 
-// The envelope must be produced by encryptToRecipient or encryptRichMessage.`} title="sendCompanyMessage" />
+// The envelope must be produced by encryptToRecipient or encryptRichMessage.
+// The operator's display name, avatar and Gravatar hash are embedded in the
+// encrypted attachments JSON as { operator: { uuid, name, image, gravatarHash } }
+// so the customer client can render the correct avatar per message.`} title="sendCompanyMessage" />
 
   <Endpoint method="GET" path="/messages/{conversationId}" auth="X-API-Key" authType="api-key" />
   <CodeBlock language="typescript" code={`client.listMessages(
@@ -249,11 +252,13 @@ const client = new IxblixClient({
   envelope: MessageEnvelope,
   operatorUuid?: string,
   replyToId?: string | null,
-  attachments?: string | null,
+  attachments?: string | null, // encrypted JSON — embed operator identity here
 ): Promise<Message>
 
 // Multipart/form-data upload. The file must be encrypted with
-// encryptMediaToRecipient or encryptMediaWithAttachments.`} title="sendCompanyMedia" />
+// encryptMediaToRecipient or encryptMediaWithAttachments.
+// The operator identity is embedded in the encrypted attachments JSON as
+// { operator: { uuid, name, image, gravatarHash } }.`} title="sendCompanyMedia" />
 
   <Endpoint method="GET" path="/media/{mediaId}" auth="X-API-Key" authType="api-key" />
   <CodeBlock language="typescript" code={`client.getMedia(mediaId: string): Promise<Media>

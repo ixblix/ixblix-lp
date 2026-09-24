@@ -45,7 +45,9 @@ const locale: Locale = 'en';
       <tr><td><code>encryptedKey</code></td><td>Yes</td><td>AES key wrapped to customer's RSA public key.</td></tr>
       <tr><td><code>selfEncryptedKey</code></td><td>Yes</td><td>AES key wrapped to operator's own RSA public key.</td></tr>
       <tr><td><code>keyId</code></td><td>Yes</td><td>Identifier of the operator's public key.</td></tr>
+      <tr><td><code>operatorUuid</code></td><td>No</td><td>Identifier of the operator sending this message. Falls back to the conversation's current operator.</td></tr>
       <tr><td><code>replyToId</code></td><td>No</td><td>ID of the message this replies to.</td></tr>
+      <tr><td><code>attachments</code></td><td>No</td><td>Encrypted JSON string with rich message attachments (buttons, vcard, location). The operator identity (name, image, gravatarHash) should be embedded in this JSON by the sender before encryption so the customer client can render the correct avatar per message.</td></tr>
     </tbody>
   </table>
 

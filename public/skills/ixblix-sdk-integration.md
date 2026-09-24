@@ -669,6 +669,9 @@ await companyClient.reportCompanyPresence(conversationId, 'typing' | 'stopped' |
 ### Messages
 
 ```typescript
+// The operator identity (name, image, gravatarHash) is embedded in the
+// encrypted attachments JSON as { operator: { uuid, name, image, gravatarHash } }
+// so the customer client can render the correct avatar per message.
 await companyClient.sendCompanyMessage(conversationId, envelope, contentType?, operatorUuid?, replyToId?, attachments?);
 await companyClient.reactToMessage(conversationId, messageId, emoji, operatorUuid?);
 const messages = await companyClient.listMessages(conversationId);
@@ -678,6 +681,7 @@ await companyClient.markMessageReadByCompany(conversationId, messageId);
 ### Media
 
 ```typescript
+// Operator identity is embedded in the encrypted attachments JSON, same as messages.
 const message = await companyClient.sendCompanyMedia(conversationId, { data, fileName, mimeType }, envelope, operatorUuid?, replyToId?, attachments?);
 const media = await companyClient.getMedia(mediaId);
 const { data, media } = await companyClient.downloadCompanyMedia(mediaId);
@@ -794,6 +798,7 @@ Full OpenAPI spec with interactive testing available at: `https://dev.ixblix.app
 ## Full Documentation
 
 For complete API reference with all endpoints, request/response examples, and detailed parameter descriptions, see:
+
 - **REST API Reference**: https://ixblix.app/docs/api-reference
 - **SDK Reference**: https://ixblix.app/docs/sdk
 - **Quick Start Guide**: https://ixblix.app/docs/quickstart

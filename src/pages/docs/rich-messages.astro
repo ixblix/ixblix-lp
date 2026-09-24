@@ -15,8 +15,14 @@ const locale: Locale = 'en';
   <p>Only the <strong>operator</strong> (company side) may send rich messages. The customer can reply to them as regular text.</p>
 
   <h2>Attachments Format</h2>
-  <p>The <code>attachments</code> field holds an encrypted JSON string describing interactive elements. Encrypt it with the same per-message AES key used for <code>content</code>.</p>
+  <p>The <code>attachments</code> field holds an encrypted JSON string describing interactive elements. Encrypt it with the same per-message AES key used for <code>content</code>. The operator identity is also embedded here so the customer client can render the correct avatar per message.</p>
   <CodeBlock language="json" code={`{
+  "operator": {
+    "uuid": "agent-42",
+    "name": "Maria Silva",
+    "image": "https://cdn.example.com/avatars/maria.png",
+    "gravatarHash": "md5-of-operator-email"
+  },
   "buttons": [
     { "type": "reply", "label": "Yes" },
     { "type": "reply", "label": "No" },

@@ -228,7 +228,7 @@ const locale: Locale = 'pt';
   <h2 id="messages">Messages</h2>
 
   <Endpoint method="POST" path="/messages/company" auth="X-API-Key" authType="api-key" />
-  <p>Send an encrypted message from the company to the contact.</p>
+  <p>Send an encrypted message from the company to the contact. The operator identity (name, image, gravatarHash) is embedded in the encrypted <code>attachments</code> JSON as <code>{ "operator": { ... } }</code> so the customer client can render the correct avatar per message.</p>
   <CodeBlock language="json" code={`// Request
 {
   "conversationId": "...",
