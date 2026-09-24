@@ -191,7 +191,6 @@ When the customer opens the deeplink, you receive a `CUSTOMER_JOINED` webhook:
 ```typescript
 import {
   verifyWebhook,
-  encryptToRecipient,
   WEBHOOK_SIGNATURE_HEADER,
 } from "@ixblix/sdk-js";
 
@@ -205,15 +204,10 @@ app.post("/ixblix/webhooks", async (req, res) => {
     // Store customer's public key for this conversation
     await saveCustomerKey(event.conversationId, event.customerPublicKey);
 
-    // Send welcome message
-    const envelope = encryptToRecipient(
-      "Hello! How can we help you today?",
-      event.customerPublicKey,
-      operatorKey.keyId,
-      operatorKey.publicKeySpki,
-    );
-
-    await companyClient.sendCompanyMessage(event.conversationId, envelope);
+    // Send welcome message using sendEncryptedMessage (recommended)
+    await companyClient.sendEncryptedMessage(event.conversationId, {
+      content: "Hello! How can we help you today?",
+    });
   }
 
   res.status(200).send("OK");
@@ -231,6 +225,7 @@ await companyClient.sendEncryptedMessage(conversationId, {
 // Or with operator identity and attachments
 await companyClient.sendEncryptedMessage(conversationId, {
   content: "Hello from Acme Corp!",
+  operatorUuid: "agent-42",
   operatorIdentity: {
     uuid: "agent-42",
     name: "Maria Silva",
@@ -238,15 +233,24 @@ await companyClient.sendEncryptedMessage(conversationId, {
   },
 });
 
-// Low-level: manual encryption + send
+// Low-level: manual encryption + send (see encryptMessagePayload below)
 const keys = await companyClient.getConversationKeys(conversationId);
-const envelope = encryptToRecipient(
-  "Hello from Acme Corp!",
+const payload = encryptMessagePayload(
+  { content: "Hello from Acme Corp!" },
   keys.customerPublicKey!,
   operatorKey.keyId,
   operatorKey.publicKeySpki,
 );
-await companyClient.sendCompanyMessage(conversation.id, envelope);
+const envelope = {
+  content: payload.content,
+  iv: payload.contentIv,
+  authTag: payload.contentAuthTag,
+  encryptedKey: payload.encryptedKey,
+  selfEncryptedKey: payload.selfEncryptedKey,
+  keyId: payload.keyId,
+  attachments: payload.attachments,
+};
+await companyClient.sendCompanyMessage(conversationId, envelope);
 ```
 
 ### Step 11: Receive and Decrypt Messages
@@ -546,7 +550,6 @@ import express from "express";
 import {
   IxblixClient,
   verifyWebhook,
-  encryptToRecipient,
   decryptEnvelope,
   loadOrCreateOperatorKey,
   WEBHOOK_SIGNATURE_HEADER,
@@ -582,14 +585,10 @@ app.post("/ixblix/webhooks", async (req, res) => {
     case "CUSTOMER_JOINED": {
       await saveCustomerKey(event.conversationId, event.customerPublicKey);
 
-      const envelope = encryptToRecipient(
-        "Hello! How can we help?",
-        event.customerPublicKey,
-        operatorKey.keyId,
-        operatorKey.publicKeySpki,
-      );
-
-      await companyClient.sendCompanyMessage(event.conversationId, envelope);
+      // Use sendEncryptedMessage for convenience
+      await companyClient.sendEncryptedMessage(event.conversationId, {
+        content: "Hello! How can we help?",
+      });
       break;
     }
 
@@ -746,7 +745,6 @@ const change = await companyClient.startPaymentChange({ planId? });
 ```typescript
 import {
   generateOperatorKeyPair,
-  encryptToRecipient,
   encryptMessagePayload,
   decryptEnvelope,
   decryptAttachments,
@@ -756,15 +754,6 @@ import {
 
 const { publicKey, privateKey, publicKeySpki, keyId } =
   await generateOperatorKeyPair();
-
-// encryptToRecipient(plaintext, recipientPublicKeySpki, senderKeyId, senderPublicKeySpki)
-// Simple text encryption (no attachments)
-const envelope = encryptToRecipient(
-  plaintext,
-  recipientPublicKeySpki,
-  senderKeyId,
-  senderPublicKeySpki,
-);
 
 // encryptMessagePayload - unified encryption for content + file + attachments
 // All parts share a single AES key with distinct IVs

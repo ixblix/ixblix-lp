@@ -255,26 +255,26 @@ console.log(JSON.stringify({
 
 # Send encrypted message
 # The operator identity is embedded in the encrypted attachments JSON.
-# Use encryptRichMessage to encrypt content + attachments (with operator) together.
+# Use encryptMessagePayload to encrypt content + attachments (with operator) together.
 node -e "
 const crypto = require('crypto');
-const { encryptRichMessage } = require('@ixblix/sdk-js');
+const { encryptMessagePayload } = require('@ixblix/sdk-js');
 
 const attachments = {
   operator: { uuid: 'agent-42', name: 'Maria Silva', gravatarHash: 'md5-of-email' }
 };
-const envelope = encryptRichMessage(
-  'Hello!', attachments,
+const payload = encryptMessagePayload(
+  { content: 'Hello!', attachments },
   customerPublicKey, operatorKey.keyId, operatorKey.publicKeySpki
 );
 console.log(JSON.stringify({
-  content: envelope.content,
-  iv: envelope.iv,
-  authTag: envelope.authTag,
-  encryptedKey: envelope.encryptedKey,
-  selfEncryptedKey: envelope.selfEncryptedKey,
-  keyId: envelope.keyId,
-  attachments: envelope.attachments
+  content: payload.content,
+  iv: payload.contentIv,
+  authTag: payload.contentAuthTag,
+  encryptedKey: payload.encryptedKey,
+  selfEncryptedKey: payload.selfEncryptedKey,
+  keyId: payload.keyId,
+  attachments: payload.attachments
 }));
 "
 

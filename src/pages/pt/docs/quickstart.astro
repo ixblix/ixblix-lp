@@ -240,51 +240,39 @@ app.post(
   <p>
     The customer's browser generates a keypair when the deeplink opens and registers the public key
     with ixblix. Prefer reacting to the <code>CUSTOMER_JOINED</code> webhook; only poll if you must.
+    <code>sendEncryptedMessage</code> fetches the keys internally — you just need to know the customer
+    has joined before calling it.
   </p>
   <CodeBlock language="typescript" code={`async function waitForCustomer(conversationId: string) {
   for (;;) {
     const keys = await companyWithKey.getConversationKeys(conversationId);
     if (keys.keyStatus === 'ACTIVE' && keys.customerPublicKey) {
-      return keys.customerPublicKey;
+      return; // customer joined — safe to call sendEncryptedMessage
     }
     await new Promise((r) => setTimeout(r, 2000));
   }
 }
 
-const customerPublicKey = await waitForCustomer(conversation.id);`} title="wait-for-customer.ts" />
+await waitForCustomer(conversation.id);`} title="wait-for-customer.ts" />
 
   <h2>Step 11 — Send an encrypted message</h2>
   <Endpoint method="POST" path="/messages/company" auth="X-API-Key" authType="api-key" />
   <p>
-    Encrypt the plaintext to the customer's public key with <code>encryptRichMessage</code>, embedding the operator identity in the attachments JSON, then send
-    the envelope. The SDK wraps the per-message AES key both to the customer and to your own public key
-    so you can read back what you sent.
+    Use <code>sendEncryptedMessage</code> — a single convenience method that fetches the conversation
+    keys, encrypts the content (and/or media and/or attachments) with one AES key, and sends the
+    message. The SDK wraps the AES key both to the customer and to your own public key so you can
+    read back what you sent.
   </p>
-  <CodeBlock language="typescript" code={`import { encryptRichMessage } from '@ixblix/sdk-js';
-
-// Embed the operator identity in the attachments object so the customer
-// client can render the correct avatar per message.
-const envelope = encryptRichMessage(
-  'Hello Jane! How can we help you today?',
-  {
-    operator: {
-      uuid: 'agent-42',
-      name: 'Maria Silva',
-      gravatarHash: md5('maria@example.com'),
-    },
+  <CodeBlock language="typescript" code={`// Text message with operator identity embedded in the encrypted attachments.
+await companyWithKey.sendEncryptedMessage(conversation.id, {
+  content: 'Hello Jane! How can we help you today?',
+  operatorUuid: 'agent-42',
+  operatorIdentity: {
+    uuid: 'agent-42',
+    name: 'Maria Silva',
+    gravatarHash: md5('maria@example.com'),
   },
-  customerPublicKey,          // customer's SPKI public key
-  operatorKey.keyId,          // your key id
-  operatorKey.publicKeySpki,  // your public key (for self-read)
-);
-
-await companyWithKey.sendCompanyMessage(
-  conversation.id,
-  envelope,
-  'text',
-  'agent-42', // operatorUuid
-  null,       // replyToId
-);`} title="send-message.ts" />
+});`} title="send-message.ts" />
 
   <h2>Step 12 — Receive encrypted messages</h2>
   <Endpoint method="GET" path="/messages/{conversationId}" auth="X-API-Key" authType="api-key" />
@@ -305,69 +293,38 @@ for (const message of messages) {
   <h2>Step 13 — Send media and rich messages</h2>
   <Endpoint method="POST" path="/media/company" auth="X-API-Key" authType="api-key" />
   <p>
-    Encrypt the file bytes, then upload the ciphertext with the envelope fields. Media that also carries
-    rich attachments (buttons, vCard, location, link preview) must be encrypted with a single AES key —
-    use <code>encryptMediaWithAttachments</code> so the recipient can decrypt both.
+    <code>sendEncryptedMessage</code> handles text, media and rich attachments through the same call.
+    Pass <code>content</code> for text, <code>file</code> for media, or both for a media message with
+    caption. Add <code>attachments</code> for buttons, vCard, location or link previews — everything
+    shares a single AES key with distinct IVs.
   </p>
   <CodeBlock language="typescript" code={`import { readFile } from 'node:fs/promises';
-import {
-  encryptMediaToRecipient,
-  encryptRichMessage,
-  encryptMediaWithAttachments,
-} from '@ixblix/sdk-js';
 
 // 1. Plain media (image/audio/document).
 const bytes = await readFile('./invoice.pdf');
-const mediaEnvelope = encryptMediaToRecipient(
-  bytes,
-  customerPublicKey,
-  operatorKey.keyId,
-  operatorKey.publicKeySpki,
-);
-await companyWithKey.sendCompanyMedia(
-  conversation.id,
-  { data: bytes, fileName: 'invoice.pdf', mimeType: 'application/pdf' },
-  mediaEnvelope,
-  'agent-42',
-);
+await companyWithKey.sendEncryptedMessage(conversation.id, {
+  file: { data: bytes, fileName: 'invoice.pdf', mimeType: 'application/pdf' },
+  operatorUuid: 'agent-42',
+});
 
 // 2. Rich text message (quick replies, buttons, ...).
-const richEnvelope = encryptRichMessage(
-  'Your ticket is ready.',
-  {
+await companyWithKey.sendEncryptedMessage(conversation.id, {
+  content: 'Your ticket is ready.',
+  operatorUuid: 'agent-42',
+  attachments: {
     buttons: [{ type: 'reply', label: 'Open ticket', value: 'open' }],
   },
-  customerPublicKey,
-  operatorKey.keyId,
-  operatorKey.publicKeySpki,
-);
-await companyWithKey.sendCompanyMessage(
-  conversation.id,
-  richEnvelope,
-  'text',
-  'agent-42',
-  null,
-  richEnvelope.attachments,
-);
+});
 
-// 3. Media + rich attachments sharing one AES key.
-const combined = encryptMediaWithAttachments(
-  bytes,
-  {
+// 3. Media + caption + rich attachments in one call.
+await companyWithKey.sendEncryptedMessage(conversation.id, {
+  content: 'Here is your invoices.',
+  file: { data: bytes, fileName: 'invoice.pdf', mimeType: 'application/pdf' },
+  operatorUuid: 'agent-42',
+  attachments: {
     buttons: [{ type: 'reply', label: 'Open ticket', value: 'open' }],
   },
-  customerPublicKey,
-  operatorKey.keyId,
-  operatorKey.publicKeySpki,
-);
-await companyWithKey.sendCompanyMedia(
-  conversation.id,
-  { data: bytes, fileName: 'invoice.pdf', mimeType: 'application/pdf' },
-  combined,
-  'agent-42',
-  null,
-  combined.encryptedAttachments,
-);`} title="media-and-rich.ts" />
+});`} title="media-and-rich.ts" />
 
   <h2>Step 14 — Presence, read receipts and reactions</h2>
   <CodeBlock language="typescript" code={`// Tell the customer you are typing / recording.
@@ -398,7 +355,6 @@ await companyWithKey.reactToMessage(conversation.id, messageId, '👍', 'agent-4
   <CodeBlock language="typescript" code={`import {
   IxblixClient,
   loadOrCreateOperatorKey,
-  encryptRichMessage,
   decryptEnvelope,
 } from '@ixblix/sdk-js';
 import { createHash } from 'crypto';
@@ -446,24 +402,16 @@ async function main() {
     keys = await company.getConversationKeys(conversation.id);
   }
 
-  // Embed operator identity in the encrypted attachments so the customer
-  // client can render the correct avatar per message.
-  const envelope = encryptRichMessage(
-    'Hello! How can we help?',
-    {
-      operator: {
-        uuid: 'agent-42',
-        name: 'Maria Silva',
-        gravatarHash: md5('maria@example.com'),
-      },
+  // sendEncryptedMessage fetches keys, encrypts and sends in one call.
+  await company.sendEncryptedMessage(conversation.id, {
+    content: 'Hello! How can we help?',
+    operatorUuid: 'agent-42',
+    operatorIdentity: {
+      uuid: 'agent-42',
+      name: 'Maria Silva',
+      gravatarHash: md5('maria@example.com'),
     },
-    keys.customerPublicKey,
-    operatorKey.keyId,
-    operatorKey.publicKeySpki,
-  );
-  await company.sendCompanyMessage(
-    conversation.id, envelope, 'text', 'agent-42', null, envelope.attachments,
-  );
+  });
 
   // 6. Read the reply
   const messages = await company.listMessages(conversation.id);
