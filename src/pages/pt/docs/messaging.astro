@@ -21,6 +21,7 @@ const locale: Locale = 'pt';
   <p class="callout">Todo o conteúdo das mensagens é criptografado ponta a ponta. O backend apenas armazena e retransmite ciphertext — nunca vê o texto plano.</p>
 
   <h2>Enviar Mensagem (Empresa)</h2>
+  <p>Envie mensagens de texto com <code>application/json</code> ou mensagens de mídia com <code>multipart/form-data</code>. Para mensagens de mídia, o campo <code>content</code> se torna a legenda criptografada.</p>
   <CodeBlock language="bash" code={`curl -X POST https://api.ixblix.app/api/messages/company \\
   -H "X-API-Key: smci_xxxx" \\
   -H "Content-Type: application/json" \\
@@ -32,7 +33,18 @@ const locale: Locale = 'pt';
     "encryptedKey": "<base64 chave AES envolvida com RSA-OAEP>",
     "selfEncryptedKey": "<base64 chave AES envolvida com RSA-OAEP>",
     "keyId": "<id da chave do operador>"
-  }'`} title="cURL" />
+  }'`} title="cURL (mensagem de texto)" />
+
+  <CodeBlock language="bash" code={`curl -X POST https://api.ixblix.app/api/messages/company \\
+  -H "X-API-Key: smci_xxxx" \\
+  -F "conversationId=conv_xxxx" \\
+  -F "content=<base64 legenda AES-GCM>" \\
+  -F "file=@arquivo_criptografado.bin" \\
+  -F "iv=<base64>" \\
+  -F "authTag=<base64>" \\
+  -F "encryptedKey=<base64>" \\
+  -F "selfEncryptedKey=<base64>" \\
+  -F "keyId=<id da chave do operador>"`} title="cURL (mensagem de mídia)" />
 
   <h3>Campos da Requisição</h3>
   <table>

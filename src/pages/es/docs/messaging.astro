@@ -21,6 +21,7 @@ const locale: Locale = 'es';
   <p class="callout">Todo el contenido de los mensajes está cifrado de extremo a extremo. El backend solo almacena y retransmite ciphertext — nunca ve el texto plano.</p>
 
   <h2>Enviar Mensaje (Empresa)</h2>
+  <p>Envíe mensajes de texto con <code>application/json</code> o mensajes de medios con <code>multipart/form-data</code>. Para mensajes de medios, el campo <code>content</code> se convierte en el pie de foto cifrado.</p>
   <CodeBlock language="bash" code={`curl -X POST https://api.ixblix.app/api/messages/company \\
   -H "X-API-Key: smci_xxxx" \\
   -H "Content-Type: application/json" \\
@@ -32,7 +33,18 @@ const locale: Locale = 'es';
     "encryptedKey": "<base64 clave AES envuelta con RSA-OAEP>",
     "selfEncryptedKey": "<base64 clave AES envuelta con RSA-OAEP>",
     "keyId": "<id de clave del operador>"
-  }'`} title="cURL" />
+  }'`} title="cURL (mensaje de texto)" />
+
+  <CodeBlock language="bash" code={`curl -X POST https://api.ixblix.app/api/messages/company \\
+  -H "X-API-Key: smci_xxxx" \\
+  -F "conversationId=conv_xxxx" \\
+  -F "content=<base64 pie de foto AES-GCM>" \\
+  -F "file=@archivo_cifrado.bin" \\
+  -F "iv=<base64>" \\
+  -F "authTag=<base64>" \\
+  -F "encryptedKey=<base64>" \\
+  -F "selfEncryptedKey=<base64>" \\
+  -F "keyId=<id de clave del operador>"`} title="cURL (mensaje de medios)" />
 
   <h3>Campos de la Solicitud</h3>
   <table>

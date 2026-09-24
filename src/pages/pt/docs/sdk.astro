@@ -192,19 +192,37 @@ const client = new IxblixClient({
   <h3>Company methods — messages</h3>
 
   <Endpoint method="POST" path="/messages/company" auth="X-API-Key" authType="api-key" />
-  <CodeBlock language="typescript" code={`client.sendCompanyMessage(
+  <CodeBlock language="typescript" code={`// High-level: encrypt and send in one call (recommended)
+// Handles text, media, or both with a single AES key
+await client.sendEncryptedMessage(
+  conversationId: string,
+  options: {
+    content?: string,        // plaintext (required for text, optional caption for media)
+    file?: { data: Uint8Array, fileName: string, mimeType: string },
+    operatorUuid?: string,
+    replyToId?: string | null,
+    attachments?: { buttons?, vcard?, location?, linkPreview? },
+    operatorIdentity?: { uuid, name, image?, gravatarHash? },
+  },
+): Promise<Message>
+
+// Low-level: send pre-encrypted envelope
+client.sendCompanyMessage(
   conversationId: string,
   envelope: MessageEnvelope,
   contentType?: 'text' | 'react', // default 'text'
   operatorUuid?: string,
   replyToId?: string | null,
-  attachments?: string | null, // encrypted JSON — embed operator identity here
+  file?: MediaUpload, // optional: { data: Uint8Array, fileName, mimeType }
+  contentIv?: string,      // caption IV (for media messages)
+  contentAuthTag?: string, // caption auth tag (for media messages)
 ): Promise<Message>
 
-// The envelope must be produced by encryptToRecipient or encryptRichMessage.
-// The operator's display name, avatar and Gravatar hash are embedded in the
-// encrypted attachments JSON as { operator: { uuid, name, image, gravatarHash } }
-// so the customer client can render the correct avatar per message.`} title="sendCompanyMessage" />
+// sendEncryptedMessage fetches keys, encrypts all parts (content/file/attachments)
+// with a single AES key using distinct IVs, and sends.
+// sendCompanyMessage requires a pre-built envelope.
+// When file is provided, the message is sent as media (multipart/form-data).
+// The operator identity is embedded in the encrypted attachments JSON.`} title="sendEncryptedMessage / sendCompanyMessage" />
 
   <Endpoint method="GET" path="/messages/{conversationId}" auth="X-API-Key" authType="api-key" />
   <CodeBlock language="typescript" code={`client.listMessages(
@@ -245,20 +263,19 @@ const client = new IxblixClient({
 
   <h3>Company methods — media</h3>
 
-  <Endpoint method="POST" path="/media/company" auth="X-API-Key" authType="api-key" />
-  <CodeBlock language="typescript" code={`client.sendCompanyMedia(
-  conversationId: string,
-  file: MediaUpload, // { data: Uint8Array, fileName, mimeType }
-  envelope: MessageEnvelope,
-  operatorUuid?: string,
-  replyToId?: string | null,
-  attachments?: string | null, // encrypted JSON — embed operator identity here
-): Promise<Message>
+  <p>Media messages are sent using <code>sendEncryptedMessage</code> with the optional <code>file</code> parameter. The <code>content</code> field becomes the media caption. All parts (caption, file, attachments) share a single AES key with distinct IVs. The endpoint is the same as for text messages: <code>POST /api/messages/company</code>.</p>
 
-// Multipart/form-data upload. The file must be encrypted with
-// encryptMediaToRecipient or encryptMediaWithAttachments.
-// The operator identity is embedded in the encrypted attachments JSON as
-// { operator: { uuid, name, image, gravatarHash } }.`} title="sendCompanyMedia" />
+  <Endpoint method="POST" path="/messages/company" auth="X-API-Key" authType="api-key" />
+  <CodeBlock language="typescript" code={`// Send media with optional caption and attachments
+await client.sendEncryptedMessage(conversationId, {
+  content: 'Here is your invoice', // optional caption
+  file: { data: fileBytes, fileName: 'invoice.pdf', mimeType: 'application/pdf' },
+  operatorIdentity: { uuid: 'agent-42', name: 'Maria Silva', gravatarHash: '...' },
+  attachments: { buttons: [...] }, // optional rich attachments
+});
+
+// All parts (caption, file, attachments) are encrypted with a single AES key
+// using distinct IVs so the nonce is never reused.`} title="sendEncryptedMessage (media)" />
 
   <Endpoint method="GET" path="/media/{mediaId}" auth="X-API-Key" authType="api-key" />
   <CodeBlock language="typescript" code={`client.getMedia(mediaId: string): Promise<Media>

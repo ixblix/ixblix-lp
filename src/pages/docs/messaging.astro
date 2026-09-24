@@ -21,6 +21,7 @@ const locale: Locale = 'en';
   <p class="callout">All message content is end-to-end encrypted. The backend only stores and relays ciphertext — it never sees plaintext.</p>
 
   <h2>Send a Message (Company)</h2>
+  <p>Send text messages with <code>application/json</code> or media messages with <code>multipart/form-data</code>. For media messages, the <code>content</code> field becomes the encrypted caption.</p>
   <CodeBlock language="bash" code={`curl -X POST https://api.ixblix.app/api/messages/company \\
   -H "X-API-Key: smci_xxxx" \\
   -H "Content-Type: application/json" \\
@@ -32,7 +33,18 @@ const locale: Locale = 'en';
     "encryptedKey": "<base64 RSA-OAEP wrapped AES key>",
     "selfEncryptedKey": "<base64 RSA-OAEP wrapped AES key>",
     "keyId": "<operator key id>"
-  }'`} title="cURL" />
+  }'`} title="cURL (text message)" />
+
+  <CodeBlock language="bash" code={`curl -X POST https://api.ixblix.app/api/messages/company \\
+  -H "X-API-Key: smci_xxxx" \\
+  -F "conversationId=conv_xxxx" \\
+  -F "content=<base64 AES-GCM caption>" \\
+  -F "file=@encrypted_file.bin" \\
+  -F "iv=<base64>" \\
+  -F "authTag=<base64>" \\
+  -F "encryptedKey=<base64>" \\
+  -F "selfEncryptedKey=<base64>" \\
+  -F "keyId=<operator key id>"`} title="cURL (media message)" />
 
   <h3>Request Fields</h3>
   <table>

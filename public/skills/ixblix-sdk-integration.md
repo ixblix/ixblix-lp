@@ -223,17 +223,29 @@ app.post("/ixblix/webhooks", async (req, res) => {
 ### Step 10: Send an Encrypted Message
 
 ```typescript
-import { encryptToRecipient } from "@ixblix/sdk-js";
+// High-level: encrypt and send in one call (recommended)
+await companyClient.sendEncryptedMessage(conversationId, {
+  content: "Hello from Acme Corp!",
+});
 
+// Or with operator identity and attachments
+await companyClient.sendEncryptedMessage(conversationId, {
+  content: "Hello from Acme Corp!",
+  operatorIdentity: {
+    uuid: "agent-42",
+    name: "Maria Silva",
+    gravatarHash: "abc123...",
+  },
+});
+
+// Low-level: manual encryption + send
 const keys = await companyClient.getConversationKeys(conversationId);
-
 const envelope = encryptToRecipient(
   "Hello from Acme Corp!",
   keys.customerPublicKey!,
   operatorKey.keyId,
   operatorKey.publicKeySpki,
 );
-
 await companyClient.sendCompanyMessage(conversation.id, envelope);
 ```
 
@@ -267,30 +279,17 @@ if (event.event === "MESSAGE_READ") {
 
 ## Rich Messages
 
-Send interactive buttons using the `encryptRichMessage` helper:
+Send interactive buttons using the high-level `sendEncryptedMessage` method:
 
 ```typescript
-import { encryptRichMessage } from "@ixblix/sdk-js";
-
-const keys = await companyClient.getConversationKeys(conversationId);
-
-const envelope = encryptRichMessage(
-  "Please confirm your order:",
-  {
+// High-level: encrypt and send rich messages in one call (recommended)
+await companyClient.sendEncryptedMessage(conversationId, {
+  content: "Please confirm your order:",
+  attachments: {
     buttons: [
       { type: "reply", label: "Confirm" },
       { type: "reply", label: "Cancel" },
-      {
-        type: "url",
-        label: "View details",
-        url: "https://acme.example.com/order/123",
-      },
-      { type: "copy", label: "Copy order number", value: "ORD-2026-001234" },
-      {
-        type: "pix",
-        label: "Copy Pix code",
-        value: "00020126580014br.gov.bcb.pix...",
-      },
+      { type: "url", label: "View details", url: "https://acme.example.com/order/123" },
     ],
     vcard: {
       name: "Support",
@@ -298,19 +297,39 @@ const envelope = encryptRichMessage(
       organization: "Acme Corp",
     },
   },
+  operatorIdentity: {
+    uuid: "agent-42",
+    name: "Maria Silva",
+    gravatarHash: "abc123...",
+  },
+});
+
+// Low-level: manual encryption + send
+const keys = await companyClient.getConversationKeys(conversationId);
+const payload = encryptMessagePayload(
+  {
+    content: "Please confirm your order:",
+    attachments: {
+      buttons: [
+        { type: "reply", label: "Confirm" },
+        { type: "reply", label: "Cancel" },
+      ],
+    },
+  },
   keys.customerPublicKey!,
   operatorKey.keyId,
   operatorKey.publicKeySpki,
 );
-
-await companyClient.sendCompanyMessage(
-  conversationId,
-  envelope,
-  "text",
-  undefined,
-  undefined,
-  envelope.attachments,
-);
+const envelope = {
+  content: payload.content,
+  iv: payload.contentIv,
+  authTag: payload.contentAuthTag,
+  encryptedKey: payload.encryptedKey,
+  selfEncryptedKey: payload.selfEncryptedKey,
+  keyId: payload.keyId,
+  attachments: payload.attachments,
+};
+await companyClient.sendCompanyMessage(conversationId, envelope);
 ```
 
 **Rendering rules:**
@@ -321,30 +340,29 @@ await companyClient.sendCompanyMessage(
 
 ## Media Attachments
 
-Upload and send encrypted media:
+Send encrypted media using the unified `sendEncryptedMessage` method:
 
 ```typescript
-import { encryptMediaToRecipient } from "@ixblix/sdk-js";
 import fs from "node:fs";
 
 const fileBuffer = fs.readFileSync("./invoice.pdf");
-const keys = await companyClient.getConversationKeys(conversationId);
 
-const envelope = encryptMediaToRecipient(
-  fileBuffer,
-  keys.customerPublicKey!,
-  operatorKey.keyId,
-  operatorKey.publicKeySpki,
-);
-
-// Upload encrypted file (the SDK sends it as multipart/form-data)
-const message = await companyClient.sendCompanyMedia(
-  conversationId,
-  { data: fileBuffer, fileName: "invoice.pdf", mimeType: "application/pdf" },
-  envelope,
-);
+// High-level: encrypt and send media in one call (recommended)
+// All parts (caption, file, attachments) share a single AES key with distinct IVs
+const message = await companyClient.sendEncryptedMessage(conversationId, {
+  content: "Here is your invoice", // optional caption
+  file: { data: fileBuffer, fileName: "invoice.pdf", mimeType: "application/pdf" },
+  operatorIdentity: {
+    uuid: "agent-42",
+    name: "Maria Silva",
+    gravatarHash: "abc123...",
+  },
+});
 
 console.log("Media message sent:", message.id);
+
+// Low-level: manual encryption + send via sendCompanyMessage with file parameter
+// See encryptMediaWithAttachments and sendCompanyMessage documentation.
 ```
 
 **Download and decrypt received media:**
@@ -669,10 +687,21 @@ await companyClient.reportCompanyPresence(conversationId, 'typing' | 'stopped' |
 ### Messages
 
 ```typescript
-// The operator identity (name, image, gravatarHash) is embedded in the
-// encrypted attachments JSON as { operator: { uuid, name, image, gravatarHash } }
-// so the customer client can render the correct avatar per message.
-await companyClient.sendCompanyMessage(conversationId, envelope, contentType?, operatorUuid?, replyToId?, attachments?);
+// High-level: encrypt and send in one call (recommended)
+// Fetches keys, encrypts all parts (content/file/attachments) with single AES key, and sends.
+await companyClient.sendEncryptedMessage(conversationId, {
+  content?, // plaintext (required for text, optional caption for media)
+  file?: { data: Uint8Array, fileName: string, mimeType: string },
+  operatorUuid?, replyToId?,
+  attachments?: { buttons?, vcard?, location?, linkPreview? },
+  operatorIdentity?: { uuid, name, image?, gravatarHash? },
+});
+
+// Low-level: send pre-encrypted envelope
+// The operator identity is embedded in the encrypted attachments JSON.
+// When file is provided, the message is sent as media (multipart/form-data).
+// contentIv/contentAuthTag are for the caption (distinct from media iv/authTag).
+await companyClient.sendCompanyMessage(conversationId, envelope, contentType?, operatorUuid?, replyToId?, file?, contentIv?, contentAuthTag?);
 await companyClient.reactToMessage(conversationId, messageId, emoji, operatorUuid?);
 const messages = await companyClient.listMessages(conversationId);
 await companyClient.markMessageReadByCompany(conversationId, messageId);
@@ -681,8 +710,15 @@ await companyClient.markMessageReadByCompany(conversationId, messageId);
 ### Media
 
 ```typescript
-// Operator identity is embedded in the encrypted attachments JSON, same as messages.
-const message = await companyClient.sendCompanyMedia(conversationId, { data, fileName, mimeType }, envelope, operatorUuid?, replyToId?, attachments?);
+// Media is sent via sendEncryptedMessage with the file parameter
+// All parts (caption, file, attachments) share a single AES key with distinct IVs
+const message = await companyClient.sendEncryptedMessage(conversationId, {
+  content: "caption", // optional
+  file: { data, fileName, mimeType },
+  operatorIdentity?: { uuid, name, image?, gravatarHash? },
+  attachments?: { buttons?, vcard?, location?, linkPreview? },
+});
+
 const media = await companyClient.getMedia(mediaId);
 const { data, media } = await companyClient.downloadCompanyMedia(mediaId);
 ```
@@ -711,51 +747,45 @@ const change = await companyClient.startPaymentChange({ planId? });
 import {
   generateOperatorKeyPair,
   encryptToRecipient,
+  encryptMessagePayload,
   decryptEnvelope,
-  encryptRichMessage,
   decryptAttachments,
-  encryptMediaToRecipient,
-  encryptMediaWithAttachments,
   decryptMediaEnvelope,
   loadOrCreateOperatorKey,
 } from "@ixblix/sdk-js";
 
 const { publicKey, privateKey, publicKeySpki, keyId } =
   await generateOperatorKeyPair();
+
 // encryptToRecipient(plaintext, recipientPublicKeySpki, senderKeyId, senderPublicKeySpki)
+// Simple text encryption (no attachments)
 const envelope = encryptToRecipient(
   plaintext,
   recipientPublicKeySpki,
   senderKeyId,
   senderPublicKeySpki,
 );
+
+// encryptMessagePayload - unified encryption for content + file + attachments
+// All parts share a single AES key with distinct IVs
+const payload = encryptMessagePayload(
+  {
+    content?: string,              // plaintext content/caption
+    fileBytes?: Uint8Array,        // media file bytes
+    attachments?: MessageAttachments, // buttons, vcard, location, operator identity
+  },
+  recipientPublicKeySpki,
+  senderKeyId,
+  senderPublicKeySpki,
+);
+// Returns: { content, contentIv, contentAuthTag, mediaContent?, mediaIv?, mediaAuthTag?, attachments?, encryptedKey, selfEncryptedKey, keyId }
+
 // decryptEnvelope(message, senderPrivateKey)
 const plaintext = decryptEnvelope(message, senderPrivateKey);
-// encryptRichMessage(plaintext, attachments: MessageAttachments | null, recipientPublicKeySpki, senderKeyId, senderPublicKeySpki)
-const richEnvelope = encryptRichMessage(
-  plaintext,
-  attachments,
-  recipientPublicKeySpki,
-  senderKeyId,
-  senderPublicKeySpki,
-);
+
 // decryptAttachments(message, senderPrivateKey)
 const attachments = decryptAttachments(message, senderPrivateKey);
-// encryptMediaToRecipient(fileBuffer, recipientPublicKeySpki, senderKeyId, senderPublicKeySpki)
-const mediaEnvelope = encryptMediaToRecipient(
-  fileBuffer,
-  recipientPublicKeySpki,
-  senderKeyId,
-  senderPublicKeySpki,
-);
-// encryptMediaWithAttachments(fileBuffer, attachments: MessageAttachments, recipientPublicKeySpki, senderKeyId, senderPublicKeySpki)
-const mediaWithAttachments = encryptMediaWithAttachments(
-  fileBuffer,
-  attachments,
-  recipientPublicKeySpki,
-  senderKeyId,
-  senderPublicKeySpki,
-);
+
 // decryptMediaEnvelope(encryptedData, message, senderPrivateKey)
 const decryptedMedia = decryptMediaEnvelope(
   encryptedData,
