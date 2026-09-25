@@ -243,13 +243,23 @@ client.sendCompanyMessage(
 // Encrypts the emoji and sends it as contentType='react' with replyToId.
 // Requires operatorKey in the client constructor.`} title="reactToMessage" />
 
+  <Endpoint method="POST" path="/messages/company/delivered" auth="X-API-Key" authType="api-key" />
+  <CodeBlock language="typescript" code={`client.markMessageDeliveredByCompany(
+  conversationId: string,
+  messageId: string,
+): Promise<{ messageId: string; deliveredAt: string }>
+
+// Emits a 'message_delivered' Socket.io event to the customer.
+// Call it as soon as your client receives the message.`} title="markMessageDeliveredByCompany" />
+
   <Endpoint method="POST" path="/messages/company/read" auth="X-API-Key" authType="api-key" />
   <CodeBlock language="typescript" code={`client.markMessageReadByCompany(
   conversationId: string,
   messageId: string,
 ): Promise<{ messageId: string; readAt: string }>
 
-// Emits a 'message_read' Socket.io event to the customer.`} title="markMessageReadByCompany" />
+// Emits a 'message_read' Socket.io event to the customer.
+// Only call it when the window is focused and the message is in the viewport.`} title="markMessageReadByCompany" />
 
   <h3>Company methods — presence</h3>
 
@@ -533,6 +543,7 @@ const { event, raw } = parseWebhook(body: unknown): ParsedWebhook
       <tr><td><code>COMPANY_ACTIVATED</code></td><td>{'{ companyId, transactionId, apiKey }'}</td></tr>
       <tr><td><code>CUSTOMER_JOINED</code></td><td>{'{ companyId, conversationId, customerPublicKey }'}</td></tr>
       <tr><td><code>MESSAGE_RECEIVED</code></td><td>{'{ companyId, conversationId, messageId, replyToId?, sentAt }'}</td></tr>
+      <tr><td><code>MESSAGE_DELIVERED</code></td><td>{'{ companyId, conversationId, messageId, deliveredAt }'}</td></tr>
       <tr><td><code>MESSAGE_READ</code></td><td>{'{ companyId, conversationId, messageId, readAt }'}</td></tr>
       <tr><td><code>CONVERSATION_CLOSED</code></td><td>{'{ companyId, conversationId }'}</td></tr>
       <tr><td><code>TYPING</code> / <code>STOPPED_TYPING</code> / <code>RECORDING</code> / <code>CHAT_CLOSED</code></td><td>{'{ companyId, conversationId, type }'}</td></tr>

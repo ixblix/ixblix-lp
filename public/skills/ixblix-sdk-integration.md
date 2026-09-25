@@ -189,10 +189,7 @@ console.log("Share this link:", deeplink);
 When the customer opens the deeplink, you receive a `CUSTOMER_JOINED` webhook:
 
 ```typescript
-import {
-  verifyWebhook,
-  WEBHOOK_SIGNATURE_HEADER,
-} from "@ixblix/sdk-js";
+import { verifyWebhook, WEBHOOK_SIGNATURE_HEADER } from "@ixblix/sdk-js";
 
 app.post("/ixblix/webhooks", async (req, res) => {
   // Verify signature
@@ -269,13 +266,24 @@ if (event.event === "MESSAGE_RECEIVED") {
 }
 ```
 
-### Step 12: Mark Messages as Read
+### Step 12: Delivery and Read Receipts
+
+Every message moves through three acknowledgement states: `sent`, `delivered`
+and `read`. `read` implies `delivered`.
 
 ```typescript
-// Operator read (company side)
+// Operator side: mark as delivered as soon as your client receives the message.
+await companyClient.markMessageDeliveredByCompany(conversationId, messageId);
+
+// Operator side: mark as read once the operator actually sees it. Only report
+// a read when the window is focused AND the message is in the viewport.
 await companyClient.markMessageReadByCompany(conversationId, messageId);
 
-// Customer read triggers MESSAGE_READ webhook
+// Customer side: MESSAGE_DELIVERED fires when the customer's device receives
+// your message; MESSAGE_READ fires when the customer actually sees it.
+if (event.event === "MESSAGE_DELIVERED") {
+  console.log("Message delivered:", event.messageId, "at", event.deliveredAt);
+}
 if (event.event === "MESSAGE_READ") {
   console.log("Message read:", event.messageId, "at", event.readAt);
 }
@@ -293,7 +301,11 @@ await companyClient.sendEncryptedMessage(conversationId, {
     buttons: [
       { type: "reply", label: "Confirm" },
       { type: "reply", label: "Cancel" },
-      { type: "url", label: "View details", url: "https://acme.example.com/order/123" },
+      {
+        type: "url",
+        label: "View details",
+        url: "https://acme.example.com/order/123",
+      },
     ],
     vcard: {
       name: "Support",
@@ -355,7 +367,11 @@ const fileBuffer = fs.readFileSync("./invoice.pdf");
 // All parts (caption, file, attachments) share a single AES key with distinct IVs
 const message = await companyClient.sendEncryptedMessage(conversationId, {
   content: "Here is your invoice", // optional caption
-  file: { data: fileBuffer, fileName: "invoice.pdf", mimeType: "application/pdf" },
+  file: {
+    data: fileBuffer,
+    fileName: "invoice.pdf",
+    mimeType: "application/pdf",
+  },
   operatorIdentity: {
     uuid: "agent-42",
     name: "Maria Silva",
@@ -489,18 +505,19 @@ All webhook events use a flat JSON structure with an `event` field indicating th
 - `X-Ixblix-Event`: event type.
 - `X-Ixblix-Company-Id`: company ID (useful for multi-tenant receivers to look up the correct secret in O(1)).
 
-| Event                 | When                                  | Key Fields                                  |
-| --------------------- | ------------------------------------- | ------------------------------------------- |
-| `MESSAGE_RECEIVED`    | Contact sends a message               | `conversationId`, `messageId`, `replyToId?` |
-| `MESSAGE_READ`        | Customer reads a company message      | `conversationId`, `messageId`, `readAt`     |
-| `CUSTOMER_JOINED`     | Customer opens chat and registers key | `conversationId`, `customerPublicKey`       |
-| `CONVERSATION_CLOSED` | Conversation is closed                | `conversationId`                            |
-| `TYPING`              | Customer starts typing                | `conversationId`, `type: "typing"`          |
-| `STOPPED_TYPING`      | Customer stops typing                 | `conversationId`, `type: "stopped"`         |
-| `RECORDING`           | Customer records audio                | `conversationId`, `type: "recording"`       |
-| `CHAT_CLOSED`         | Customer closes chat window           | `conversationId`, `type: "chat_closed"`     |
-| `BALANCE_LOW`         | Company credit balance is low         | `companyId`, `balanceCents`                 |
-| `COMPANY_ACTIVATED`   | Company activated after payment       | `companyId`, `transactionId`, `apiKey`      |
+| Event                 | When                                  | Key Fields                                   |
+| --------------------- | ------------------------------------- | -------------------------------------------- |
+| `MESSAGE_RECEIVED`    | Contact sends a message               | `conversationId`, `messageId`, `replyToId?`  |
+| `MESSAGE_DELIVERED`   | Customer's device receives a message  | `conversationId`, `messageId`, `deliveredAt` |
+| `MESSAGE_READ`        | Customer reads a company message      | `conversationId`, `messageId`, `readAt`      |
+| `CUSTOMER_JOINED`     | Customer opens chat and registers key | `conversationId`, `customerPublicKey`        |
+| `CONVERSATION_CLOSED` | Conversation is closed                | `conversationId`                             |
+| `TYPING`              | Customer starts typing                | `conversationId`, `type: "typing"`           |
+| `STOPPED_TYPING`      | Customer stops typing                 | `conversationId`, `type: "stopped"`          |
+| `RECORDING`           | Customer records audio                | `conversationId`, `type: "recording"`        |
+| `CHAT_CLOSED`         | Customer closes chat window           | `conversationId`, `type: "chat_closed"`      |
+| `BALANCE_LOW`         | Company credit balance is low         | `companyId`, `balanceCents`                  |
+| `COMPANY_ACTIVATED`   | Company activated after payment       | `companyId`, `transactionId`, `apiKey`       |
 
 ## Error Handling
 
@@ -606,6 +623,14 @@ app.post("/ixblix/webhooks", async (req, res) => {
       break;
     }
 
+    case "MESSAGE_DELIVERED":
+      console.log(
+        "Message delivered:",
+        event.messageId,
+        "at",
+        event.deliveredAt,
+      );
+      break;
     case "MESSAGE_READ":
       console.log("Message read:", event.messageId, "at", event.readAt);
       break;
@@ -705,6 +730,7 @@ await companyClient.sendEncryptedMessage(conversationId, {
 await companyClient.sendCompanyMessage(conversationId, envelope, contentType?, operatorUuid?, replyToId?, file?, contentIv?, contentAuthTag?);
 await companyClient.reactToMessage(conversationId, messageId, emoji, operatorUuid?);
 const messages = await companyClient.listMessages(conversationId);
+await companyClient.markMessageDeliveredByCompany(conversationId, messageId);
 await companyClient.markMessageReadByCompany(conversationId, messageId);
 ```
 

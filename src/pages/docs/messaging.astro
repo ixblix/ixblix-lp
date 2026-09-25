@@ -82,12 +82,24 @@ const locale: Locale = 'en';
 
   <p class="callout">Prefer webhooks over polling. SMCI pushes a <code>MESSAGE_RECEIVED</code> webhook whenever a contact sends a message.</p>
 
-  <h2>Read Receipts</h2>
-  <p>Mark a customer message as read (operator side):</p>
+  <h2>Delivery and Read Receipts</h2>
+  <p>Every message moves through three acknowledgement states: <code>sent</code>, <code>delivered</code> and <code>read</code>. <code>read</code> implies <code>delivered</code> — marking a message as read also records its delivery when it had not been delivered yet. Both timestamps are exposed on the message as <code>deliveredAt</code> and <code>readAt</code>.</p>
+
+  <p>Mark a customer message as delivered (operator side) as soon as your client receives it:</p>
+  <CodeBlock language="bash" code={`curl -X POST https://api.ixblix.app/api/messages/company/delivered \\
+  -H "X-API-Key: smci_xxxx" \\
+  -H "Content-Type: application/json" \\
+  -d '{ "conversationId": "conv_xxxx", "messageId": "msg_xxxx" }'`} title="cURL" />
+
+  <p>Mark a customer message as read (operator side) once the operator has actually seen it:</p>
   <CodeBlock language="bash" code={`curl -X POST https://api.ixblix.app/api/messages/company/read \\
   -H "X-API-Key: smci_xxxx" \\
   -H "Content-Type: application/json" \\
   -d '{ "conversationId": "conv_xxxx", "messageId": "msg_xxxx" }'`} title="cURL" />
+
+  <p class="callout">Only report a read when the chat window is focused <strong>and</strong> the message is visible in the viewport. Report delivery instead when the message is off-screen or the window is in the background — otherwise the customer sees a false read receipt.</p>
+
+  <p>On the customer side, ixblix pushes a <code>MESSAGE_DELIVERED</code> webhook when the customer's device receives your message and a <code>MESSAGE_READ</code> webhook when the customer actually sees it.</p>
 
   <h2>Reactions</h2>
   <p>Reactions are encrypted messages with <code>contentType</code> set to <code>react</code> and <code>replyToId</code> pointing to the target message. Send an empty <code>content</code> to clear a reaction.</p>

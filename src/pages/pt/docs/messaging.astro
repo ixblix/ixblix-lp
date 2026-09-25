@@ -82,12 +82,24 @@ const locale: Locale = 'pt';
 
   <p class="callout">Prefira webhooks ao invés de polling. O ixblix envia um webhook <code>MESSAGE_RECEIVED</code> sempre que um contato envia uma mensagem.</p>
 
-  <h2>Recibos de Leitura</h2>
-  <p>Marque uma mensagem do cliente como lida (lado do operador):</p>
+  <h2>Entrega e Recibos de Leitura</h2>
+  <p>Toda mensagem passa por três estados de confirmação: <code>sent</code>, <code>delivered</code> e <code>read</code>. <code>read</code> implica <code>delivered</code> — marcar como lida também registra a entrega quando ela ainda não ocorreu. Ambos os timestamps são expostos na mensagem como <code>deliveredAt</code> e <code>readAt</code>.</p>
+
+  <p>Marque uma mensagem do cliente como entregue (lado do operador) assim que seu cliente a receber:</p>
+  <CodeBlock language="bash" code={`curl -X POST https://api.ixblix.app/api/messages/company/delivered \\
+  -H "X-API-Key: smci_xxxx" \\
+  -H "Content-Type: application/json" \\
+  -d '{ "conversationId": "conv_xxxx", "messageId": "msg_xxxx" }'`} title="cURL" />
+
+  <p>Marque uma mensagem do cliente como lida (lado do operador) quando o operador realmente a tiver visto:</p>
   <CodeBlock language="bash" code={`curl -X POST https://api.ixblix.app/api/messages/company/read \\
   -H "X-API-Key: smci_xxxx" \\
   -H "Content-Type: application/json" \\
   -d '{ "conversationId": "conv_xxxx", "messageId": "msg_xxxx" }'`} title="cURL" />
+
+  <p class="callout">Só reporte leitura quando a janela do chat estiver em foco <strong>e</strong> a mensagem estiver visível na viewport. Reporte entrega quando a mensagem estiver fora da tela ou a janela estiver em segundo plano — caso contrário o cliente vê um recibo de leitura falso.</p>
+
+  <p>Do lado do cliente, o ixblix envia um webhook <code>MESSAGE_DELIVERED</code> quando o dispositivo do cliente recebe sua mensagem e um webhook <code>MESSAGE_READ</code> quando o cliente realmente a vê.</p>
 
   <h2>Reações</h2>
   <p>Reações são mensagens criptografadas com <code>contentType</code> definido como <code>react</code> e <code>replyToId</code> apontando para a mensagem alvo. Envie <code>content</code> vazio para limpar uma reação.</p>

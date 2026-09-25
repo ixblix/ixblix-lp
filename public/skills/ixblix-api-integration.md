@@ -349,18 +349,19 @@ All webhook events use a flat JSON structure with an `event` field indicating th
 - `X-Ixblix-Event`: event type.
 - `X-Ixblix-Company-Id`: company ID (useful for multi-tenant receivers to look up the correct secret in O(1)).
 
-| Event                 | When                                  | Key Fields                                  |
-| --------------------- | ------------------------------------- | ------------------------------------------- |
-| `MESSAGE_RECEIVED`    | Contact sends a message               | `conversationId`, `messageId`, `replyToId?` |
-| `MESSAGE_READ`        | Customer reads a company message      | `conversationId`, `messageId`, `readAt`     |
-| `CUSTOMER_JOINED`     | Customer opens chat and registers key | `conversationId`, `customerPublicKey`       |
-| `CONVERSATION_CLOSED` | Conversation is closed                | `conversationId`                            |
-| `TYPING`              | Customer starts typing                | `conversationId`, `type: "typing"`          |
-| `STOPPED_TYPING`      | Customer stops typing                 | `conversationId`, `type: "stopped"`         |
-| `RECORDING`           | Customer records audio                | `conversationId`, `type: "recording"`       |
-| `CHAT_CLOSED`         | Customer closes chat window           | `conversationId`, `type: "chat_closed"`     |
-| `BALANCE_LOW`         | Company credit balance is low         | `companyId`, `balanceCents`                 |
-| `COMPANY_ACTIVATED`   | Company activated after payment       | `companyId`, `transactionId`, `apiKey`      |
+| Event                 | When                                  | Key Fields                                   |
+| --------------------- | ------------------------------------- | -------------------------------------------- |
+| `MESSAGE_RECEIVED`    | Contact sends a message               | `conversationId`, `messageId`, `replyToId?`  |
+| `MESSAGE_DELIVERED`   | Customer's device receives a message  | `conversationId`, `messageId`, `deliveredAt` |
+| `MESSAGE_READ`        | Customer reads a company message      | `conversationId`, `messageId`, `readAt`      |
+| `CUSTOMER_JOINED`     | Customer opens chat and registers key | `conversationId`, `customerPublicKey`        |
+| `CONVERSATION_CLOSED` | Conversation is closed                | `conversationId`                             |
+| `TYPING`              | Customer starts typing                | `conversationId`, `type: "typing"`           |
+| `STOPPED_TYPING`      | Customer stops typing                 | `conversationId`, `type: "stopped"`          |
+| `RECORDING`           | Customer records audio                | `conversationId`, `type: "recording"`        |
+| `CHAT_CLOSED`         | Customer closes chat window           | `conversationId`, `type: "chat_closed"`      |
+| `BALANCE_LOW`         | Company credit balance is low         | `companyId`, `balanceCents`                  |
+| `COMPANY_ACTIVATED`   | Company activated after payment       | `companyId`, `transactionId`, `apiKey`       |
 
 ## Rich Messages
 

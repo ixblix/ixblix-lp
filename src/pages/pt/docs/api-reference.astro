@@ -250,11 +250,17 @@ const locale: Locale = 'pt';
   <Endpoint method="POST" path="/messages/contact" auth="Token" authType="token" />
   <p>Send an encrypted message from the contact to the company.</p>
 
+  <Endpoint method="POST" path="/messages/company/delivered" auth="X-API-Key" authType="api-key" />
+  <p>Marca uma mensagem enviada pelo contato como entregue ao operador. Emite o evento Socket.io <code>message_delivered</code>. Sem efeito quando a mensagem já foi lida.</p>
+
   <Endpoint method="POST" path="/messages/company/read" auth="X-API-Key" authType="api-key" />
-  <p>Mark a contact-sent message as read by the operator. Emits <code>message_read</code> Socket.io event.</p>
+  <p>Marca uma mensagem enviada pelo contato como lida pelo operador. Emite o evento Socket.io <code>message_read</code>. Só reporte leitura quando a janela estiver em foco e a mensagem estiver na viewport.</p>
+
+  <Endpoint method="POST" path="/messages/contact/delivered" auth="Token" authType="token" />
+  <p>Marca uma mensagem enviada pela empresa como entregue ao contato. Emite o webhook <code>MESSAGE_DELIVERED</code>. Sem efeito quando a mensagem já foi lida.</p>
 
   <Endpoint method="POST" path="/messages/contact/read" auth="Token" authType="token" />
-  <p>Mark a company-sent message as read by the contact. Emits <code>MESSAGE_READ</code> webhook.</p>
+  <p>Marca uma mensagem enviada pela empresa como lida pelo contato. Emite o webhook <code>MESSAGE_READ</code>. Só é reportado quando a janela está em foco e a mensagem está na viewport.</p>
 
   <Endpoint method="GET" path="/messages/{conversationId}" auth="X-API-Key" authType="api-key" />
   <p>List all messages of a conversation (content is always ciphertext when encrypted).</p>

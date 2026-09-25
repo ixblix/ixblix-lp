@@ -82,12 +82,24 @@ const locale: Locale = 'es';
 
   <p class="callout">Prefiera webhooks en lugar de polling. ixblix envía un webhook <code>MESSAGE_RECEIVED</code> cada vez que un contacto envía un mensaje.</p>
 
-  <h2>Acuses de Lectura</h2>
-  <p>Marque un mensaje del cliente como leído (lado del operador):</p>
+  <h2>Entrega y Acuses de Lectura</h2>
+  <p>Todo mensaje pasa por tres estados de confirmación: <code>sent</code>, <code>delivered</code> y <code>read</code>. <code>read</code> implica <code>delivered</code> — marcar como leído también registra la entrega cuando aún no ocurrió. Ambos timestamps se exponen en el mensaje como <code>deliveredAt</code> y <code>readAt</code>.</p>
+
+  <p>Marque un mensaje del cliente como entregado (lado del operador) en cuanto su cliente lo reciba:</p>
+  <CodeBlock language="bash" code={`curl -X POST https://api.ixblix.app/api/messages/company/delivered \\
+  -H "X-API-Key: smci_xxxx" \\
+  -H "Content-Type: application/json" \\
+  -d '{ "conversationId": "conv_xxxx", "messageId": "msg_xxxx" }'`} title="cURL" />
+
+  <p>Marque un mensaje del cliente como leído (lado del operador) cuando el operador realmente lo haya visto:</p>
   <CodeBlock language="bash" code={`curl -X POST https://api.ixblix.app/api/messages/company/read \\
   -H "X-API-Key: smci_xxxx" \\
   -H "Content-Type: application/json" \\
   -d '{ "conversationId": "conv_xxxx", "messageId": "msg_xxxx" }'`} title="cURL" />
+
+  <p class="callout">Solo reporte lectura cuando la ventana del chat esté enfocada <strong>y</strong> el mensaje esté visible en el viewport. Reporte entrega cuando el mensaje esté fuera de pantalla o la ventana esté en segundo plano — de lo contrario el cliente ve un acuse de lectura falso.</p>
+
+  <p>Del lado del cliente, ixblix envía un webhook <code>MESSAGE_DELIVERED</code> cuando el dispositivo del cliente recibe su mensaje y un webhook <code>MESSAGE_READ</code> cuando el cliente realmente lo ve.</p>
 
   <h2>Reacciones</h2>
   <p>Las reacciones son mensajes cifrados con <code>contentType</code> establecido en <code>react</code> y <code>replyToId</code> apuntando al mensaje objetivo. Envíe <code>content</code> vacío para limpiar una reacción.</p>

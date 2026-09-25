@@ -188,6 +188,7 @@ app.post(
         return void onCustomerJoined(event);
       case 'MESSAGE_RECEIVED':
         return void onMessageReceived(event);
+      case 'MESSAGE_DELIVERED':
       case 'MESSAGE_READ':
         return void onMessageRead(event);
       case 'CONVERSATION_CLOSED':
@@ -206,6 +207,7 @@ app.post(
       <tr><td><code>COMPANY_ACTIVATED</code></td><td>Uma empresa concluiu o onboarding e recebeu sua chave de API.</td></tr>
       <tr><td><code>CUSTOMER_JOINED</code></td><td>O cliente abriu o deeplink e registrou sua chave pública.</td></tr>
       <tr><td><code>MESSAGE_RECEIVED</code></td><td>O cliente enviou uma mensagem (texto ou mídia).</td></tr>
+      <tr><td><code>MESSAGE_DELIVERED</code></td><td>O dispositivo do cliente recebeu uma mensagem que você enviou.</td></tr>
       <tr><td><code>MESSAGE_READ</code></td><td>O cliente leu uma mensagem que você enviou.</td></tr>
       <tr><td><code>TYPING</code> / <code>STOPPED_TYPING</code> / <code>RECORDING</code> / <code>CHAT_CLOSED</code></td><td>Presença reportada pela janela de chat do cliente.</td></tr>
       <tr><td><code>CONVERSATION_CLOSED</code></td><td>A conversa foi fechada.</td></tr>
@@ -326,12 +328,16 @@ await companyWithKey.sendEncryptedMessage(conversation.id, {
   },
 });`} title="media-and-rich.ts" />
 
-  <h2>Passo 14 — Presença, recibos de leitura e reações</h2>
+  <h2>Passo 14 — Presença, recibos de entrega/leitura e reações</h2>
   <CodeBlock language="typescript" code={`// Tell the customer you are typing / recording.
 await companyWithKey.reportCompanyPresence(conversation.id, 'typing');
 await companyWithKey.reportCompanyPresence(conversation.id, 'stopped');
 
-// Mark a customer message as read (the customer sees the receipt live).
+// Mark a customer message as delivered as soon as your client receives it.
+await companyWithKey.markMessageDeliveredByCompany(conversation.id, messageId);
+
+// Mark it as read once the operator actually sees it (window focused and the
+// message inside the viewport). The customer sees the receipt live.
 await companyWithKey.markMessageReadByCompany(conversation.id, messageId);
 
 // React with an emoji (encrypted to the customer, sent as contentType "react").
