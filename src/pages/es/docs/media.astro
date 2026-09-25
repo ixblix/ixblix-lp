@@ -53,6 +53,28 @@ const locale: Locale = 'es';
   <h2>Almacenamiento</h2>
   <p>Los archivos se almacenan cifrados en almacenamiento de objetos compatible con S3. El backend solo almacena ciphertext — nunca ve texto plano. El acceso se controla mediante la clave de API de la empresa o el token de la conversación.</p>
 
+  <h3>Clase de almacenamiento</h3>
+  <p>Los medios se escriben en uno de dos buckets, elegido por subida con el campo opcional <code>storageClass</code> del multipart:</p>
+  <table>
+    <thead><tr><th>Valor</th><th>Bucket</th><th>Retención</th></tr></thead>
+    <tbody>
+      <tr><td><code>TRANSIENT</code> (predeterminado)</td><td>Bucket con expiración</td><td>Borrado por el job de retención cuando termina la ventana de retención de la conversación. La política de ciclo de vida del bucket también puede expirar el objeto.</td></tr>
+      <tr><td><code>PERMANENT</code></td><td>Bucket permanente</td><td>Conservado indefinidamente. El job de retención lo preserva.</td></tr>
+    </tbody>
+  </table>
+  <CodeBlock language="bash" code={`curl -X POST https://api.ixblix.app/api/media/company \\
+  -H "X-API-Key: smci_xxxx" \\
+  -F "conversationId=conv_xxxx" \\
+  -F "file=@contrato_cifrado.bin" \\
+  -F "storageClass=PERMANENT" \\
+  -F "iv=base64-iv" \\
+  -F "authTag=base64-auth-tag" \\
+  -F "encryptedKey=base64-clave-aes-envuelta" \\
+  -F "selfEncryptedKey=base64-clave-aes-envuelta-para-si" \\
+  -F "keyId=operator-key-1"`} title="cURL" />
+  <p>Use <code>PERMANENT</code> para archivos que deben sobrevivir a la ventana de retención (p. ej. contratos firmados, recibos, evidencia de auditoría). Cualquier otro valor se rechaza con <code>VALIDATION_ERROR</code>. La clase elegida se devuelve como <code>storageClass</code> en el objeto <code>Media</code>.</p>
+  <p><strong>Nota:</strong> una solicitud explícita de borrado (LGPD/GDPR "derecho al olvido") también elimina archivos permanentes. <code>PERMANENT</code> solo exime al archivo del barrido automático de retención, no de un borrado solicitado por el cliente.</p>
+
   <PageNav
     prev={{ titleKey: 'nav.richMessages', path: 'rich-messages' }}
     next={{ titleKey: 'nav.presence', path: 'presence' }}

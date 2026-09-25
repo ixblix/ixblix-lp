@@ -750,6 +750,24 @@ const media = await companyClient.getMedia(mediaId);
 const { data, media } = await companyClient.downloadCompanyMedia(mediaId);
 ```
 
+**Storage class.** Media is stored in one of two buckets. `TRANSIENT` (the
+default) is erased by the retention job once the conversation's retention
+window elapses; `PERMANENT` is kept indefinitely. Set it on the multipart
+upload when you need a file to outlive the retention window:
+
+```typescript
+// Via the raw HTTP client (multipart/form-data)
+const form = new FormData();
+form.append("conversationId", conversationId);
+form.append("file", encryptedBlob, "encrypted.bin");
+form.append("storageClass", "PERMANENT"); // or "TRANSIENT" (default)
+// ...plus iv, authTag, encryptedKey, selfEncryptedKey, keyId
+```
+
+The chosen class is returned as `storageClass` on the `Media` object. An
+explicit erasure request still removes permanent files — `PERMANENT` only
+exempts a file from the automatic retention sweep.
+
 ### Credits
 
 ```typescript

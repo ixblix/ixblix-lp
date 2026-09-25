@@ -53,6 +53,28 @@ const locale: Locale = 'en';
   <h2>Storage</h2>
   <p>Media files are stored encrypted in an S3-compatible object storage. The backend only stores ciphertext — it never sees the plaintext. Access is controlled via the company API key or conversation token.</p>
 
+  <h3>Storage class</h3>
+  <p>Media is written to one of two buckets, selected per upload with the optional <code>storageClass</code> multipart field:</p>
+  <table>
+    <thead><tr><th>Value</th><th>Bucket</th><th>Retention</th></tr></thead>
+    <tbody>
+      <tr><td><code>TRANSIENT</code> (default)</td><td>Expiring bucket</td><td>Erased by the retention job once the conversation's retention window elapses. The bucket's lifecycle policy may also expire the object.</td></tr>
+      <tr><td><code>PERMANENT</code></td><td>Permanent bucket</td><td>Kept indefinitely. The retention job preserves it.</td></tr>
+    </tbody>
+  </table>
+  <CodeBlock language="bash" code={`curl -X POST https://api.ixblix.app/api/media/company \\
+  -H "X-API-Key: smci_xxxx" \\
+  -F "conversationId=conv_xxxx" \\
+  -F "file=@encrypted_contract.bin" \\
+  -F "storageClass=PERMANENT" \\
+  -F "iv=base64-iv" \\
+  -F "authTag=base64-auth-tag" \\
+  -F "encryptedKey=base64-rsa-wrapped-aes-key" \\
+  -F "selfEncryptedKey=base64-rsa-wrapped-aes-key-to-self" \\
+  -F "keyId=operator-key-1"`} title="cURL" />
+  <p>Use <code>PERMANENT</code> for files that must outlive the retention window (e.g. signed contracts, receipts, audit evidence). Any other value is rejected with a <code>VALIDATION_ERROR</code>. The chosen class is returned as <code>storageClass</code> on the <code>Media</code> object.</p>
+  <p><strong>Note:</strong> an explicit erasure request (LGPD/GDPR "right to erasure") removes permanent files too. <code>PERMANENT</code> only exempts a file from the automatic retention sweep, not from a customer-initiated deletion.</p>
+
   <PageNav
     prev={{ titleKey: 'nav.richMessages', path: 'rich-messages' }}
     next={{ titleKey: 'nav.presence', path: 'presence' }}

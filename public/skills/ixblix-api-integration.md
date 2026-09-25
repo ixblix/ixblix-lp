@@ -432,6 +432,39 @@ curl -X POST https://api.ixblix.app/api/media/company \
 
 The response is a `Message` object with a `mediaId` referencing the uploaded file.
 
+### Storage class (transient vs permanent)
+
+Media is written to one of two buckets, selected per upload with the optional
+`storageClass` multipart field:
+
+| Value                 | Bucket           | Retention                                                                                                                               |
+| --------------------- | ---------------- | --------------------------------------------------------------------------------------------------------------------------------------- |
+| `TRANSIENT` (default) | Expiring bucket  | Erased by the retention job once the conversation's retention window elapses. The bucket's lifecycle policy may also expire the object. |
+| `PERMANENT`           | Permanent bucket | Kept indefinitely. The retention job preserves it.                                                                                      |
+
+```bash
+# Keep this file indefinitely
+curl -X POST https://api.ixblix.app/api/media/company \
+  -H "X-API-Key: smci_xxxx" \
+  -F "conversationId=conv_xxxx" \
+  -F "file=@encrypted_file.bin" \
+  -F "storageClass=PERMANENT" \
+  -F "iv=base64-iv" \
+  -F "authTag=base64-auth-tag" \
+  -F "encryptedKey=base64-rsa-wrapped-aes-key" \
+  -F "selfEncryptedKey=base64-rsa-wrapped-aes-key-to-self" \
+  -F "keyId=operator-key-1"
+```
+
+Use `PERMANENT` for files that must outlive the retention window (e.g. signed
+contracts, receipts, audit evidence). Any other value is rejected with a
+`VALIDATION_ERROR`. The chosen class is returned as `storageClass` on the
+`Media` object.
+
+> **Note:** an explicit erasure request (LGPD/GDPR "right to erasure") removes
+> permanent files too. `PERMANENT` only exempts a file from the automatic
+> retention sweep, not from a customer-initiated deletion.
+
 ## Presence & Typing
 
 Report operator presence (typing, recording, or stopped):

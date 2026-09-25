@@ -53,6 +53,28 @@ const locale: Locale = 'pt';
   <h2>Armazenamento</h2>
   <p>Arquivos de mídia são armazenados criptografados em armazenamento de objetos compatível com S3. O backend armazena apenas ciphertext — nunca vê texto plano. O acesso é controlado via chave de API da empresa ou token da conversa.</p>
 
+  <h3>Classe de armazenamento</h3>
+  <p>A mídia é gravada em um de dois buckets, escolhido por upload com o campo opcional <code>storageClass</code> do multipart:</p>
+  <table>
+    <thead><tr><th>Valor</th><th>Bucket</th><th>Retenção</th></tr></thead>
+    <tbody>
+      <tr><td><code>TRANSIENT</code> (padrão)</td><td>Bucket com expiração</td><td>Apagado pelo job de retenção quando a janela de retenção da conversa termina. A política de ciclo de vida do bucket também pode expirar o objeto.</td></tr>
+      <tr><td><code>PERMANENT</code></td><td>Bucket permanente</td><td>Mantido indefinidamente. O job de retenção o preserva.</td></tr>
+    </tbody>
+  </table>
+  <CodeBlock language="bash" code={`curl -X POST https://api.ixblix.app/api/media/company \\
+  -H "X-API-Key: smci_xxxx" \\
+  -F "conversationId=conv_xxxx" \\
+  -F "file=@contrato_criptografado.bin" \\
+  -F "storageClass=PERMANENT" \\
+  -F "iv=base64-iv" \\
+  -F "authTag=base64-auth-tag" \\
+  -F "encryptedKey=base64-chave-aes-envolvida" \\
+  -F "selfEncryptedKey=base64-chave-aes-envolvida-para-si" \\
+  -F "keyId=operator-key-1"`} title="cURL" />
+  <p>Use <code>PERMANENT</code> para arquivos que devem sobreviver à janela de retenção (ex.: contratos assinados, recibos, evidências de auditoria). Qualquer outro valor é rejeitado com <code>VALIDATION_ERROR</code>. A classe escolhida é retornada como <code>storageClass</code> no objeto <code>Media</code>.</p>
+  <p><strong>Nota:</strong> uma solicitação explícita de exclusão (LGPD/GDPR "direito ao esquecimento") também remove arquivos permanentes. <code>PERMANENT</code> apenas isenta o arquivo da varredura automática de retenção, não de uma exclusão solicitada pelo cliente.</p>
+
   <PageNav
     prev={{ titleKey: 'nav.richMessages', path: 'rich-messages' }}
     next={{ titleKey: 'nav.presence', path: 'presence' }}
