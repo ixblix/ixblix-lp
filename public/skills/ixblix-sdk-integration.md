@@ -699,6 +699,8 @@ await companyClient.sendEncryptedMessage(conversationId, {
 // Low-level: send pre-encrypted envelope
 // The operator identity is embedded in the encrypted attachments JSON.
 // When file is provided, the message is sent as media (multipart/form-data).
+// IMPORTANT: `file.data` must be the ENCRYPTED bytes (the backend stores them
+// verbatim as ciphertext) and `envelope.iv`/`envelope.authTag` must match them.
 // contentIv/contentAuthTag are for the caption (distinct from media iv/authTag).
 await companyClient.sendCompanyMessage(conversationId, envelope, contentType?, operatorUuid?, replyToId?, file?, contentIv?, contentAuthTag?);
 await companyClient.reactToMessage(conversationId, messageId, emoji, operatorUuid?);
@@ -768,6 +770,9 @@ const payload = encryptMessagePayload(
   senderPublicKeySpki,
 );
 // Returns: { content, contentIv, contentAuthTag, mediaContent?, mediaIv?, mediaAuthTag?, attachments?, encryptedKey, selfEncryptedKey, keyId }
+// NOTE: `mediaContent` is the base64 ciphertext of the file. When uploading
+// media manually, send the decoded `mediaContent` bytes (not the plaintext)
+// together with `mediaIv`/`mediaAuthTag`.
 
 // decryptEnvelope(message, senderPrivateKey)
 const plaintext = decryptEnvelope(message, senderPrivateKey);
