@@ -1,0 +1,32 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "type": "chrome",
+      "request": "launch",
+      "name": "ixblix-lp (Chrome)",
+      "url": "http://localhost:4321",
+      "webRoot": "${workspaceFolder}/src",
+      "preLaunchTask": "ixblix-lp: Dev Server",
+      "timeout": 60000
+    },
+    {
+      "type": "msedge",
+      "request": "launch",
+      "name": "ixblix-lp (Edge)",
+      "url": "http://localhost:4321",
+      "webRoot": "${workspaceFolder}/src",
+      "preLaunchTask": "ixblix-lp: Dev Server",
+      "timeout": 60000
+    },
+    {
+      "type": "chrome",
+      "request": "launch",
+      "name": "ixblix-lp Preview (Chrome)",
+      "url": "http://localhost:4321",
+      "webRoot": "${workspaceFolder}/dist",
+      "preLaunchTask": "ixblix-lp: Preview Server",
+      "timeout": 60000
+    }
+  ]
+}

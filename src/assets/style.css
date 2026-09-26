@@ -202,6 +202,19 @@ a:hover {
 }
 
 /* ===== Main Content ===== */
+aside.sticky {
+  height: calc( 100vh - 56px) !important;
+}
+
+.api-reference {
+    position: fixed;
+    top: 56px;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    overflow: auto;
+}
+
 .main-content {
   margin-left: var(--sidebar-width);
   flex: 1;
