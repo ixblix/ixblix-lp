@@ -48,8 +48,6 @@ function guidesPath(loc: Locale): string {
     </nav>
   </header>
 
-  <p class="api-lang-note">{t(lang, 'api.langNote')}</p>
-
   <div id="api-reference" class="api-reference" data-spec-url={specUrl}>
     <noscript>
       <p class="api-fallback">
@@ -123,15 +121,19 @@ function guidesPath(loc: Locale): string {
   .api-page {
     display: flex;
     flex-direction: column;
-    min-height: 100vh;
+    height: 100vh;
     background: var(--color-bg);
   }
 
   .api-topbar {
+    position: sticky;
+    top: 0;
+    z-index: 10;
     display: flex;
     align-items: center;
     justify-content: space-between;
     gap: 1rem;
+    flex-shrink: 0;
     height: 56px;
     padding: 0 1.25rem;
     background: var(--color-sidebar-bg);
@@ -224,6 +226,10 @@ function guidesPath(loc: Locale): string {
   .api-reference {
     flex: 1;
     min-height: 0;
+  }
+
+  .api-reference :global(.scalar-app) {
+    height: 100%;
   }
 
   .api-fallback {

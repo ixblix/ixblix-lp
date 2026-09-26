@@ -23,7 +23,6 @@ const es = {
   // API Reference page
   'api.title': 'Referencia de API',
   'api.guides': 'Guías',
-  'api.langNote': 'Esta documentación se adapta automáticamente al idioma de tu navegador.',
 
   // Home
   'home.tagline': 'Plataforma independiente de mensajería comercial. Integre conversaciones seguras y white-label en su CRM o help desk con cifrado de extremo a extremo.',
