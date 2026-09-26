@@ -18,6 +18,12 @@ const en = {
   'nav.sdk': 'JavaScript SDK',
   'nav.apiReference': 'API Reference ↗',
   'nav.github': 'GitHub ↗',
+  'nav.apiExplorer': 'Interactive API Reference',
+
+  // API Reference page
+  'api.title': 'API Reference',
+  'api.guides': 'Guides',
+  'api.langNote': 'This documentation automatically adapts to your browser language.',
 
   // Home
   'home.tagline': 'Independent commercial messaging platform. Integrate secure, white-labeled conversations into your CRM or help desk with end-to-end encryption.',

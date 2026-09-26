@@ -1,0 +1,233 @@
+---
+import { t } from '../i18n';
+import { locales, localeNames, type Locale } from '../i18n/config';
+import { specPathFor } from '../openapi/paths';
+
+interface Props {
+  lang: Locale;
+}
+
+const { lang } = Astro.props;
+const specUrl = specPathFor(lang);
+
+const localePaths: Record<Locale, string> = {
+  en: '/docs/api',
+  pt: '/pt/docs/api',
+  es: '/es/docs/api',
+};
+
+function homePath(loc: Locale): string {
+  return loc === 'en' ? '/' : `/${loc}/`;
+}
+
+function guidesPath(loc: Locale): string {
+  return loc === 'en' ? '/docs/quickstart' : `/${loc}/docs/quickstart`;
+}
+---
+
+<div class="api-page">
+  <header class="api-topbar">
+    <a href={homePath(lang)} class="api-brand">
+      <span class="api-brand-icon">i</span>
+      <span class="api-brand-name">ixblix</span>
+    </a>
+
+    <nav class="api-actions">
+      <a href={guidesPath(lang)} class="api-guides-link">{t(lang, 'api.guides')}</a>
+      <div class="api-lang-switcher">
+        {locales.map((l) => (
+          <a
+            href={localePaths[l]}
+            class={`api-lang-btn ${lang === l ? 'active' : ''}`}
+            data-lang={l}
+          >
+            {localeNames[l]}
+          </a>
+        ))}
+      </div>
+    </nav>
+  </header>
+
+  <p class="api-lang-note">{t(lang, 'api.langNote')}</p>
+
+  <div id="api-reference" class="api-reference" data-spec-url={specUrl}>
+    <noscript>
+      <p class="api-fallback">
+        JavaScript is required to render the interactive reference.
+        The raw OpenAPI document is available at
+        <a href={specUrl}>{specUrl}</a>.
+      </p>
+    </noscript>
+  </div>
+</div>
+
+<script type="module" is:inline>
+  import { createApiReference } from 'https://cdn.jsdelivr.net/npm/@scalar/api-reference/esm.js';
+
+  const container = document.getElementById('api-reference');
+  const specUrl = container?.getAttribute('data-spec-url') || '/docs/openapi.json';
+
+  if (container) {
+    createApiReference(container, {
+      theme: 'purple',
+      layout: 'modern',
+      url: specUrl,
+      metaData: {
+        title: 'ixblix API Documentation',
+      },
+    });
+  }
+</script>
+
+<script is:inline>
+  // Keep the API reference in sync with the rest of the site. The language is
+  // resolved the same way as the SMCI docs: `?lang=` override, then the stored
+  // preference, then the browser language.
+  (function () {
+    var STORAGE_KEY = 'ixblix-locale';
+    var localePaths = { en: '/docs/api', pt: '/pt/docs/api', es: '/es/docs/api' };
+
+    function detect(input) {
+      var value = (input || '').toLowerCase();
+      if (value.indexOf('pt') === 0) return 'pt';
+      if (value.indexOf('es') === 0) return 'es';
+      return 'en';
+    }
+
+    var params = new URLSearchParams(window.location.search);
+    var queryLang = params.get('lang');
+    var stored = localStorage.getItem(STORAGE_KEY);
+    var browser = detect(navigator.language || 'en');
+    var current = detect(window.location.pathname.replace(/^\//, ''));
+
+    var target = queryLang ? detect(queryLang) : stored ? detect(stored) : browser;
+
+    if (queryLang) {
+      localStorage.setItem(STORAGE_KEY, target);
+    }
+
+    if (target !== current) {
+      window.location.replace(localePaths[target]);
+      return;
+    }
+
+    document.querySelectorAll('[data-lang]').forEach(function (el) {
+      el.addEventListener('click', function () {
+        localStorage.setItem(STORAGE_KEY, el.getAttribute('data-lang'));
+      });
+    });
+  })();
+</script>
+
+<style>
+  .api-page {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+    background: var(--color-bg);
+  }
+
+  .api-topbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    height: 56px;
+    padding: 0 1.25rem;
+    background: var(--color-sidebar-bg);
+    color: #ffffff;
+  }
+
+  .api-brand {
+    display: flex;
+    align-items: center;
+    gap: 0.625rem;
+    color: #ffffff;
+    text-decoration: none;
+  }
+
+  .api-brand:hover {
+    text-decoration: none;
+  }
+
+  .api-brand-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    border-radius: 6px;
+    background: var(--color-primary);
+    font-size: 0.875rem;
+    font-weight: 700;
+  }
+
+  .api-brand-name {
+    font-size: 1.125rem;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+  }
+
+  .api-actions {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+  }
+
+  .api-guides-link {
+    color: var(--color-sidebar-text);
+    font-size: 0.8125rem;
+    text-decoration: none;
+  }
+
+  .api-guides-link:hover {
+    color: #ffffff;
+    text-decoration: none;
+  }
+
+  .api-lang-switcher {
+    display: flex;
+    gap: 0.25rem;
+    padding: 0.25rem;
+    border-radius: 6px;
+    background: rgba(255, 255, 255, 0.08);
+  }
+
+  .api-lang-btn {
+    padding: 0.3125rem 0.5rem;
+    border-radius: 4px;
+    color: var(--color-sidebar-text);
+    font-size: 0.6875rem;
+    font-weight: 600;
+    text-decoration: none;
+  }
+
+  .api-lang-btn:hover {
+    color: #ffffff;
+    background: rgba(255, 255, 255, 0.1);
+    text-decoration: none;
+  }
+
+  .api-lang-btn.active {
+    color: #ffffff;
+    background: rgba(255, 255, 255, 0.18);
+  }
+
+  .api-lang-note {
+    padding: 0.5rem 1.25rem;
+    background: var(--color-bg-secondary);
+    border-bottom: 1px solid var(--color-border);
+    color: var(--color-text-muted);
+    font-size: 0.8125rem;
+  }
+
+  .api-reference {
+    flex: 1;
+    min-height: 0;
+  }
+
+  .api-fallback {
+    padding: 2rem 1.25rem;
+    color: var(--color-text-secondary);
+  }
+</style>

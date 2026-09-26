@@ -1,0 +1,16 @@
+---
+import BaseLayout from '../../../layouts/BaseLayout.astro';
+import ScalarApiReference from '../../../components/ScalarApiReference.astro';
+import { t } from '../../../i18n';
+import type { Locale } from '../../../i18n/config';
+
+const locale: Locale = 'pt';
+---
+
+<BaseLayout
+  title={`${t(locale, 'api.title')} — ixblix`}
+  description="Referência interativa da API ixblix com try-it-out. Adapta-se automaticamente ao idioma do seu navegador."
+  locale={locale}
+>
+  <ScalarApiReference lang={locale} />
+</BaseLayout>

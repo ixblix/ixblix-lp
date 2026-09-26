@@ -92,8 +92,8 @@ function homePath(loc: Locale): string {
             </a>
           ))}
         </div>
-        <a href="https://dev.ixblix.app" class="sidebar-footer-link" target="_blank" rel="noopener noreferrer">
-          {t(locale, 'nav.apiReference')}
+        <a href={locale === 'en' ? '/docs/api' : `/${locale}/docs/api`} class="sidebar-footer-link">
+          {t(locale, 'nav.apiExplorer')}
         </a>
         <a href="https://github.com/ixblix" class="sidebar-footer-link" style="margin-top: 0.5rem" target="_blank" rel="noopener noreferrer">
           {t(locale, 'nav.github')}

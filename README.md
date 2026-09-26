@@ -7,7 +7,7 @@ Published at [github.com/ixblix/ixblix-lp](https://github.com/ixblix/ixblix-lp).
 ## Quick Links
 
 - **API Endpoint**: `https://api.ixblix.app`
-- **Interactive API Docs (Scalar)**: `https://dev.ixblix.app`
+- **Interactive API Docs (Scalar)**: `https://ixblix.app/docs/api`
 - **JavaScript SDK**: `@ixblix/sdk-js`
 
 ## Development

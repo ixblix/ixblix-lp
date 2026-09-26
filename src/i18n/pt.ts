@@ -18,6 +18,12 @@ const pt = {
   'nav.sdk': 'SDK JavaScript',
   'nav.apiReference': 'Referência da API ↗',
   'nav.github': 'GitHub ↗',
+  'nav.apiExplorer': 'Referência Interativa da API',
+
+  // API Reference page
+  'api.title': 'Referência da API',
+  'api.guides': 'Guias',
+  'api.langNote': 'Esta documentação se adapta automaticamente ao idioma do seu navegador.',
 
   // Home
   'home.tagline': 'Plataforma independente de mensageria comercial. Integre conversas seguras e white-label no seu CRM ou help desk com criptografia ponta a ponta.',
