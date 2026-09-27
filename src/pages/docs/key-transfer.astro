@@ -46,7 +46,7 @@ const locale: Locale = 'en';
   <ul>
     <li><strong>Short TTL</strong> (5 minutes) on the Redis entry.</li>
     <li><strong>Attempt limiting</strong> (5 attempts, then the entry is destroyed).</li>
-    <li><strong>One-shot retrieval</strong> (GET deletes the entry).</li>
+    <li><strong>One-shot retrieval</strong> (GET transitions the entry to <code>RETRIEVED</code>).</li>
   </ul>
 
   <h2>Flow</h2>
@@ -63,6 +63,22 @@ const locale: Locale = 'en';
     <li>App confirms: <code>POST /api/key-transfer/{"{transferId}"}/confirm</code>.</li>
   </ol>
 
+  <h2>Quick Transfer (in-conversation)</h2>
+  <p>When a customer opens a conversation on a new device and cannot decrypt the history, the chat page offers to import the key from another device where the same conversation is open. The <code>transferId</code> is exchanged over the shared Socket.io connection instead of a link, so the user only reads the PIN on one screen and types it on the other.</p>
+  <p>The events are routed through the <strong>customer key room</strong> (<code>customer:{'{'}customerPublicKey{'}'}</code>), so a device only receives events for its own keypair.</p>
+
+  <table>
+    <thead><tr><th>Direction</th><th>Event</th><th>Payload</th></tr></thead>
+    <tbody>
+      <tr><td>target → server</td><td><code>request_key_transfer</code></td><td><code>{'{ token }'}</code> — deeplink token of the conversation</td></tr>
+      <tr><td>server → source</td><td><code>show_key_transfer_dialog</code></td><td>—</td></tr>
+      <tr><td>source → server</td><td><code>send_transfer_id</code></td><td><code>{'{ transferId }'}</code></td></tr>
+      <tr><td>server → target</td><td><code>receive_transfer_id</code></td><td><code>{'{ transferId, conversationToken? }'}</code></td></tr>
+    </tbody>
+  </table>
+
+  <p><code>send_transfer_id</code> carries only the <code>transferId</code>: the backend resolves the conversation the transfer is bound to and routes the event to that conversation's key room. The binding is set at creation time from the optional <code>conversationToken</code> in <code>POST /api/key-transfer</code>, which the backend resolves to the conversation id <strong>server-side</strong> — the client cannot claim an arbitrary conversation id. The token is echoed back on retrieval so the target can return to the conversation after importing the key.</p>
+
   <h2>Payload Format</h2>
   <CodeBlock language="json" code={`{
   "v": 1,
@@ -76,8 +92,10 @@ const locale: Locale = 'en';
   "ciphertext": "8f3a...",
   "iv": "9c2b...",
   "salt": "1d4e...",
-  "kdf": { "alg": "PBKDF2-SHA256", "iterations": 200000 }
+  "kdf": { "alg": "PBKDF2-SHA256", "iterations": 200000 },
+  "conversationToken": "d3f1..."
 }`} title="Stored envelope" />
+  <p><code>conversationToken</code> is optional and only present when the transfer was started from a conversation screen. It is the conversation's deeplink token — the same value already present in the conversation URL, so it is not a secret.</p>
 
   <PageNav
     prev={{ titleKey: 'nav.presence', path: 'presence' }}

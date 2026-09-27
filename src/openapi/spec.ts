@@ -1337,6 +1337,11 @@ export const openApiSpec: OpenAPIV3.Document = {
             description: "Base64 PBKDF2 salt (16 bytes).",
           },
           kdf: { $ref: "#/components/schemas/KeyTransferKdf" },
+          conversationToken: {
+            type: "string",
+            description:
+              "Deeplink token of the conversation the transfer was started from, when the source initiated it from a conversation screen. Lets the receiving device return to that conversation after importing the key.",
+          },
         },
         required: ["ciphertext", "iv", "salt", "kdf"],
       },
@@ -1364,6 +1369,11 @@ export const openApiSpec: OpenAPIV3.Document = {
             type: "string",
             description:
               "Base64 SPKI RSA public key contained in the encrypted payload. Not secret; used to validate the confirmation.",
+          },
+          conversationToken: {
+            type: "string",
+            description:
+              "Optional deeplink token of the conversation the transfer was started from. The backend resolves it to the conversation id so the quick-transfer Socket.io events can be routed to the right customer key room and the receiving device can return to that conversation. An unknown token is ignored; the transfer is still created.",
           },
         },
         required: ["ciphertext", "iv", "salt", "kdf", "publicKeySpki"],

@@ -244,11 +244,11 @@ const translations: Record<SupportedLanguage, TranslationStrings> = {
       },
       KeyTransferEnvelope: {
         description:
-          "Opaque encrypted keypair envelope. All binary fields are base64. The AES-GCM authentication tag is appended to the ciphertext.",
+          "Opaque encrypted keypair envelope. All binary fields are base64. The AES-GCM authentication tag is appended to the ciphertext. `conversationToken` is present when the transfer was started from a conversation screen.",
       },
       CreateKeyTransferRequest: {
         description:
-          "Encrypted keypair envelope plus the public key it contains, so the backend can later verify that the receiving device imported the same key.",
+          "Encrypted keypair envelope plus the public key it contains, so the backend can later verify that the receiving device imported the same key. `conversationToken` optionally binds the transfer to the conversation it was started from.",
       },
       CreateKeyTransferResponse: {
         description: "Identifier and expiry of a newly created key transfer.",
@@ -745,11 +745,11 @@ const translations: Record<SupportedLanguage, TranslationStrings> = {
       },
       KeyTransferEnvelope: {
         description:
-          "Envelope opaco e criptografado do par de chaves. Todos os campos binários são base64. A tag de autenticação AES-GCM é anexada ao texto cifrado.",
+          "Envelope opaco e criptografado do par de chaves. Todos os campos binários são base64. A tag de autenticação AES-GCM é anexada ao texto cifrado. `conversationToken` está presente quando a transferência foi iniciada a partir de uma tela de conversa.",
       },
       CreateKeyTransferRequest: {
         description:
-          "Envelope criptografado do par de chaves mais a chave pública que ele contém, para que o backend possa verificar depois que o dispositivo de destino importou a mesma chave.",
+          "Envelope criptografado do par de chaves mais a chave pública que ele contém, para que o backend possa verificar depois que o dispositivo de destino importou a mesma chave. `conversationToken` vincula opcionalmente a transferência à conversa de onde foi iniciada.",
       },
       CreateKeyTransferResponse: {
         description:
@@ -1250,11 +1250,11 @@ const translations: Record<SupportedLanguage, TranslationStrings> = {
       },
       KeyTransferEnvelope: {
         description:
-          "Sobre cifrado opaco del par de claves. Todos los campos binarios son base64. La etiqueta de autenticación AES-GCM se añade al texto cifrado.",
+          "Sobre cifrado opaco del par de claves. Todos los campos binarios son base64. La etiqueta de autenticación AES-GCM se añade al texto cifrado. `conversationToken` está presente cuando la transferencia se inició desde una pantalla de conversación.",
       },
       CreateKeyTransferRequest: {
         description:
-          "Sobre cifrado del par de claves más la clave pública que contiene, para que el backend pueda verificar después que el dispositivo receptor importó la misma clave.",
+          "Sobre cifrado del par de claves más la clave pública que contiene, para que el backend pueda verificar después que el dispositivo receptor importó la misma clave. `conversationToken` vincula opcionalmente la transferencia a la conversación desde la que se inició.",
       },
       CreateKeyTransferResponse: {
         description:
