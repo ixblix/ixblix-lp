@@ -60,6 +60,7 @@ const locale: Locale = 'es';
       <tr><td><code>operatorUuid</code></td><td>No</td><td>Identificador del operador que envía este mensaje. Usa el operador actual de la conversación si se omite.</td></tr>
       <tr><td><code>replyToId</code></td><td>No</td><td>ID del mensaje al que este responde.</td></tr>
       <tr><td><code>attachments</code></td><td>No</td><td>Cadena JSON cifrada con adjuntos ricos (botones, vcard, ubicación). La identidad del operador (nombre, imagen, gravatarHash) debe ser incorporada por el remitente en este JSON antes del cifrado para que el cliente renderice el avatar correcto por mensaje.</td></tr>
+      <tr><td><code>metadata</code></td><td>No</td><td>Objeto JSON opaco almacenado con el mensaje. Use <code>encryptedPushPayload</code> para incluir una vista previa de notificación push cifrada (ver abajo). El backend nunca inspecciona el contenido.</td></tr>
     </tbody>
   </table>
 
@@ -103,6 +104,40 @@ const locale: Locale = 'es';
 
   <h2>Reacciones</h2>
   <p>Las reacciones son mensajes cifrados con <code>contentType</code> establecido en <code>react</code> y <code>replyToId</code> apuntando al mensaje objetivo. Envíe <code>content</code> vacío para limpiar una reacción.</p>
+
+  <h2>Vistas Previas de Notificación Push</h2>
+  <p>Cuando el cliente tiene notificaciones push activadas, el dispositivo muestra una notificación para cada nuevo mensaje de la empresa. Por defecto, la notificación muestra un texto genérico "Nuevo mensaje". Para mostrar el contenido real del mensaje, incluya un <code>encryptedPushPayload</code> en los <code>metadata</code> del mensaje.</p>
+  <p>La vista previa es un pequeño objeto JSON cifrado con la <strong>clave RSA pública del cliente</strong> (RSA-OAEP/SHA-256):</p>
+  <CodeBlock language="json" code={`{
+  "text": "Hola, ¿cómo puedo ayudar?",
+  "senderName": "Agente",
+  "thumbnailBase64": "/9j/4AAQ..." // opcional, para mensajes de medios
+}`} title="Vista previa push en texto plano (antes del cifrado)" />
+  <p>Cifre la vista previa e inclúyala en los metadata del mensaje:</p>
+  <CodeBlock language="json" code={`{
+  "conversationId": "conv_xxxx",
+  "content": "<ciphertext AES-GCM en base64>",
+  "iv": "<base64>",
+  "authTag": "<base64>",
+  "encryptedKey": "<base64>",
+  "selfEncryptedKey": "<base64>",
+  "keyId": "<id de clave del operador>",
+  "metadata": {
+    "encryptedPushPayload": "<ciphertext RSA-OAEP en base64 del JSON de vista previa>"
+  }
+}`} title="Mensaje con vista previa push" />
+  <p class="callout">El backend nunca ve el texto plano de la vista previa push. Solo retransmite el ciphertext opaco al dispositivo del cliente, que lo descifra con su clave privada.</p>
+
+  <h3>Helper del SDK</h3>
+  <p>El SDK proporciona <code>encryptPushPreview()</code> para cifrar el JSON de vista previa, y <code>sendEncryptedMessage()</code> acepta una opción <code>pushPreview</code> que genera e incluye automáticamente el payload cifrado:</p>
+  <CodeBlock language="typescript" code={`await client.sendEncryptedMessage(conversationId, {
+  content: "Hola, ¿cómo puedo ayudar?",
+  operatorIdentity: { uuid: "op-1", name: "Agente" },
+  pushPreview: {
+    text: "Hola, ¿cómo puedo ayudar?",
+    senderName: "Agente",
+  },
+});`} title="SDK (vista previa push automática)" />
 
   <PageNav
     prev={{ titleKey: 'nav.companyRegistration', path: 'company-registration' }}

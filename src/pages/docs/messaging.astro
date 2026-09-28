@@ -60,6 +60,7 @@ const locale: Locale = 'en';
       <tr><td><code>operatorUuid</code></td><td>No</td><td>Identifier of the operator sending this message. Falls back to the conversation's current operator.</td></tr>
       <tr><td><code>replyToId</code></td><td>No</td><td>ID of the message this replies to.</td></tr>
       <tr><td><code>attachments</code></td><td>No</td><td>Encrypted JSON string with rich message attachments (buttons, vcard, location). The operator identity (name, image, gravatarHash) should be embedded in this JSON by the sender before encryption so the customer client can render the correct avatar per message.</td></tr>
+      <tr><td><code>metadata</code></td><td>No</td><td>Opaque JSON object stored with the message. Use <code>encryptedPushPayload</code> to include an encrypted push notification preview (see below). The backend never inspects the contents.</td></tr>
     </tbody>
   </table>
 
@@ -103,6 +104,40 @@ const locale: Locale = 'en';
 
   <h2>Reactions</h2>
   <p>Reactions are encrypted messages with <code>contentType</code> set to <code>react</code> and <code>replyToId</code> pointing to the target message. Send an empty <code>content</code> to clear a reaction.</p>
+
+  <h2>Push Notification Previews</h2>
+  <p>When the customer has push notifications enabled, the customer's device shows a notification for each new company message. By default the notification shows a generic "New message" text. To show the actual message content, include an <code>encryptedPushPayload</code> in the message <code>metadata</code>.</p>
+  <p>The preview is a small JSON object encrypted with the <strong>customer's RSA public key</strong> (RSA-OAEP/SHA-256):</p>
+  <CodeBlock language="json" code={`{
+  "text": "Hello, how can I help?",
+  "senderName": "Support Agent",
+  "thumbnailBase64": "/9j/4AAQ..." // optional, for media messages
+}`} title="Push preview plaintext (before encryption)" />
+  <p>Encrypt the preview and include it in the message metadata:</p>
+  <CodeBlock language="json" code={`{
+  "conversationId": "conv_xxxx",
+  "content": "<base64 AES-GCM ciphertext>",
+  "iv": "<base64>",
+  "authTag": "<base64>",
+  "encryptedKey": "<base64>",
+  "selfEncryptedKey": "<base64>",
+  "keyId": "<operator key id>",
+  "metadata": {
+    "encryptedPushPayload": "<base64 RSA-OAEP ciphertext of the preview JSON>"
+  }
+}`} title="Message with push preview" />
+  <p class="callout">The backend never sees the push preview plaintext. It only relays the opaque ciphertext to the customer's device, which decrypts it with its private key.</p>
+
+  <h3>SDK Helper</h3>
+  <p>The SDK provides <code>encryptPushPreview()</code> to encrypt the preview JSON, and <code>sendEncryptedMessage()</code> accepts a <code>pushPreview</code> option that automatically generates and includes the encrypted payload:</p>
+  <CodeBlock language="typescript" code={`await client.sendEncryptedMessage(conversationId, {
+  content: "Hello, how can I help?",
+  operatorIdentity: { uuid: "op-1", name: "Support Agent" },
+  pushPreview: {
+    text: "Hello, how can I help?",
+    senderName: "Support Agent",
+  },
+});`} title="SDK (automatic push preview)" />
 
   <PageNav
     prev={{ titleKey: 'nav.companyRegistration', path: 'company-registration' }}

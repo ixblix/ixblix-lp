@@ -291,7 +291,10 @@ curl -X POST https://api.ixblix.app/api/messages/company \
     "selfEncryptedKey": "base64-rsa-wrapped-aes-key-to-self",
     "keyId": "operator-key-1",
     "operatorUuid": "agent-42",
-    "attachments": "base64-encrypted-json-with-operator-identity"
+    "attachments": "base64-encrypted-json-with-operator-identity",
+    "metadata": {
+      "encryptedPushPayload": "base64-RSA-OAEP-ciphertext-of-push-preview-json"
+    }
   }'
 ```
 
@@ -528,6 +531,42 @@ All errors return:
 ```
 
 Common status codes: `400` (Bad Request), `401` (Unauthorized), `404` (Not Found), `429` (Rate Limit), `500` (Server Error).
+
+## Push Notification Previews
+
+When the customer has push notifications enabled, include an `encryptedPushPayload` in the message `metadata` to show the actual message content in the notification instead of a generic text.
+
+The preview is a JSON object encrypted with the **customer's RSA public key** (RSA-OAEP/SHA-256):
+
+```json
+{
+  "text": "Hello, how can I help?",
+  "senderName": "Support Agent",
+  "thumbnailBase64": "/9j/4AAQ..."
+}
+```
+
+Encrypt it and include in the message:
+
+```bash
+curl -X POST https://api.ixblix.app/api/messages/company \
+  -H "X-API-Key: smci_xxxx" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "conversationId": "conv_xxxx",
+    "content": "base64-AES-GCM-ciphertext",
+    "iv": "base64-iv",
+    "authTag": "base64-auth-tag",
+    "encryptedKey": "base64-rsa-wrapped-aes-key",
+    "selfEncryptedKey": "base64-rsa-wrapped-aes-key-to-self",
+    "keyId": "operator-key-1",
+    "metadata": {
+      "encryptedPushPayload": "base64-RSA-OAEP-ciphertext-of-preview-json"
+    }
+  }'
+```
+
+The backend never sees the preview plaintext. It relays the opaque ciphertext to the customer's device, which decrypts it with its private key.
 
 ## Security Best Practices
 

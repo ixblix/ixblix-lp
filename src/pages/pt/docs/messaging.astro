@@ -60,6 +60,7 @@ const locale: Locale = 'pt';
       <tr><td><code>operatorUuid</code></td><td>Não</td><td>Identificador do operador que envia esta mensagem. Usa o operador atual da conversa se omitido.</td></tr>
       <tr><td><code>replyToId</code></td><td>Não</td><td>ID da mensagem a qual esta responde.</td></tr>
       <tr><td><code>attachments</code></td><td>Não</td><td>String JSON criptografada com anexos ricos (botões, vcard, localização). A identidade do operador (nome, imagem, gravatarHash) deve ser incorporada pelo remetente neste JSON antes da criptografia para o cliente renderizar o avatar correto por mensagem.</td></tr>
+      <tr><td><code>metadata</code></td><td>Não</td><td>Objeto JSON opaco armazenado com a mensagem. Use <code>encryptedPushPayload</code> para incluir uma prévia de notificação push criptografada (veja abaixo). O backend nunca inspeciona o conteúdo.</td></tr>
     </tbody>
   </table>
 
@@ -103,6 +104,40 @@ const locale: Locale = 'pt';
 
   <h2>Reações</h2>
   <p>Reações são mensagens criptografadas com <code>contentType</code> definido como <code>react</code> e <code>replyToId</code> apontando para a mensagem alvo. Envie <code>content</code> vazio para limpar uma reação.</p>
+
+  <h2>Prévias de Notificação Push</h2>
+  <p>Quando o cliente tem notificações push ativadas, o dispositivo mostra uma notificação para cada nova mensagem da empresa. Por padrão, a notificação mostra um texto genérico "Nova mensagem". Para mostrar o conteúdo real da mensagem, inclua um <code>encryptedPushPayload</code> nos <code>metadata</code> da mensagem.</p>
+  <p>A prévia é um pequeno objeto JSON criptografado com a <strong>chave RSA pública do cliente</strong> (RSA-OAEP/SHA-256):</p>
+  <CodeBlock language="json" code={`{
+  "text": "Olá, como posso ajudar?",
+  "senderName": "Atendente",
+  "thumbnailBase64": "/9j/4AAQ..." // opcional, para mensagens de mídia
+}`} title="Prévia push em texto plano (antes da criptografia)" />
+  <p>Criptografe a prévia e inclua nos metadata da mensagem:</p>
+  <CodeBlock language="json" code={`{
+  "conversationId": "conv_xxxx",
+  "content": "<ciphertext AES-GCM em base64>",
+  "iv": "<base64>",
+  "authTag": "<base64>",
+  "encryptedKey": "<base64>",
+  "selfEncryptedKey": "<base64>",
+  "keyId": "<id da chave do operador>",
+  "metadata": {
+    "encryptedPushPayload": "<ciphertext RSA-OAEP em base64 do JSON da prévia>"
+  }
+}`} title="Mensagem com prévia push" />
+  <p class="callout">O backend nunca vê o texto plano da prévia push. Ele apenas retransmite o ciphertext opaco para o dispositivo do cliente, que o descriptografa com sua chave privada.</p>
+
+  <h3>Helper do SDK</h3>
+  <p>O SDK fornece <code>encryptPushPreview()</code> para criptografar o JSON da prévia, e <code>sendEncryptedMessage()</code> aceita uma opção <code>pushPreview</code> que gera e inclui automaticamente o payload criptografado:</p>
+  <CodeBlock language="typescript" code={`await client.sendEncryptedMessage(conversationId, {
+  content: "Olá, como posso ajudar?",
+  operatorIdentity: { uuid: "op-1", name: "Atendente" },
+  pushPreview: {
+    text: "Olá, como posso ajudar?",
+    senderName: "Atendente",
+  },
+});`} title="SDK (prévia push automática)" />
 
   <PageNav
     prev={{ titleKey: 'nav.companyRegistration', path: 'company-registration' }}

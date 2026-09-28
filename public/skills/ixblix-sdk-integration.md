@@ -228,6 +228,11 @@ await companyClient.sendEncryptedMessage(conversationId, {
     name: "Maria Silva",
     gravatarHash: "abc123...",
   },
+  // Optional: push notification preview (encrypted to customer's public key)
+  pushPreview: {
+    text: "Hello from Acme Corp!",
+    senderName: "Maria Silva",
+  },
 });
 
 // Low-level: manual encryption + send (see encryptMessagePayload below)
@@ -847,6 +852,41 @@ const parsed = verifyWebhook(req.body, webhookSecret, signature);
 const event = parsed.event;
 // Or just parse without verification:
 const parsed2 = parseWebhook(req.body);
+```
+
+## Push Notification Previews
+
+When the customer has push notifications enabled, include a `pushPreview` option in `sendEncryptedMessage()` to show the actual message content in the notification:
+
+```typescript
+await companyClient.sendEncryptedMessage(conversationId, {
+  content: "Hello, how can I help?",
+  operatorIdentity: { uuid: "op-1", name: "Support Agent" },
+  pushPreview: {
+    text: "Hello, how can I help?",
+    senderName: "Support Agent",
+    // Optional: base64 thumbnail for media messages
+    // thumbnailBase64: "/9j/4AAQ...",
+  },
+});
+```
+
+The SDK encrypts the preview with the customer's RSA public key and includes it in the message `metadata.encryptedPushPayload`. The backend never sees the preview plaintext — it relays the opaque ciphertext to the customer's device, which decrypts it with its private key.
+
+For low-level API usage, encrypt the preview manually with `encryptPushPreview()`:
+
+```typescript
+import { encryptPushPreview } from "@ixblix/sdk-js";
+
+const keys = await companyClient.getConversationKeys(conversationId);
+const encryptedPushPayload = encryptPushPreview(
+  { text: "Hello!", senderName: "Agent" },
+  keys.customerPublicKey!,
+);
+
+await companyClient.sendCompanyMessage(conversationId, envelope, "text", undefined, null, undefined, undefined, undefined, {
+  encryptedPushPayload,
+});
 ```
 
 ## Security Best Practices
