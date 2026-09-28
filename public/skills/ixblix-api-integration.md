@@ -290,7 +290,7 @@ curl -X POST https://api.ixblix.app/api/messages/company \
     "encryptedKey": "base64-rsa-wrapped-aes-key-to-customer",
     "selfEncryptedKey": "base64-rsa-wrapped-aes-key-to-self",
     "keyId": "operator-key-1",
-    "operatorUuid": "agent-42",
+    "operatorUuid": "550e8400-e29b-41d4-a716-446655440000",
     "attachments": "base64-encrypted-json-with-operator-identity",
     "metadata": {
       "encryptedPushPayload": "base64-RSA-OAEP-ciphertext-of-push-preview-json"

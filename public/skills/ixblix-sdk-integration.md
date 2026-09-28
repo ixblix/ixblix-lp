@@ -222,7 +222,7 @@ await companyClient.sendEncryptedMessage(conversationId, {
 // Or with operator identity and attachments
 await companyClient.sendEncryptedMessage(conversationId, {
   content: "Hello from Acme Corp!",
-  operatorUuid: "agent-42",
+  operatorUuid: "550e8400-e29b-41d4-a716-446655440000",
   operatorIdentity: {
     uuid: "agent-42",
     name: "Maria Silva",
@@ -884,9 +884,19 @@ const encryptedPushPayload = encryptPushPreview(
   keys.customerPublicKey!,
 );
 
-await companyClient.sendCompanyMessage(conversationId, envelope, "text", undefined, null, undefined, undefined, undefined, {
-  encryptedPushPayload,
-});
+await companyClient.sendCompanyMessage(
+  conversationId,
+  envelope,
+  "text",
+  undefined,
+  null,
+  undefined,
+  undefined,
+  undefined,
+  {
+    encryptedPushPayload,
+  },
+);
 ```
 
 ## Security Best Practices

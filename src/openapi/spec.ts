@@ -186,6 +186,7 @@ export const openApiSpec: OpenAPIV3.Document = {
         properties: {
           uuid: {
             type: "string",
+            format: "uuid",
             description:
               "Stable identifier of the operator in the desk/CRM. Used to attribute messages and to look up operator details on the client.",
           },
@@ -204,6 +205,7 @@ export const openApiSpec: OpenAPIV3.Document = {
               "MD5 hash of the operator's email, used to build a Gravatar URL.",
           },
         },
+        required: ["uuid"],
       },
       UpdateOperatorRequest: {
         type: "object",
@@ -1146,6 +1148,7 @@ export const openApiSpec: OpenAPIV3.Document = {
           },
           operatorUuid: {
             type: "string",
+            format: "uuid",
             nullable: true,
             description:
               "Identifier of the operator that sent this message (only present on COMPANY-sent messages).",
@@ -1252,6 +1255,7 @@ export const openApiSpec: OpenAPIV3.Document = {
             properties: {
               uuid: {
                 type: "string",
+                format: "uuid",
                 description:
                   "Stable identifier of the operator in the desk/CRM.",
               },
@@ -1259,6 +1263,7 @@ export const openApiSpec: OpenAPIV3.Document = {
               image: { type: "string", format: "uri" },
               gravatarHash: { type: "string" },
             },
+            required: ["uuid"],
           },
         },
         required: ["contact"],
@@ -1545,8 +1550,9 @@ export const openApiSpec: OpenAPIV3.Document = {
           },
           operatorUuid: {
             type: "string",
+            format: "uuid",
             description:
-              "Identifier of the operator sending this message. When omitted, the conversation's current operator uuid is used.",
+              "Identifier of the operator sending this message. Must be a valid UUID. When omitted, the conversation's current operator uuid is used.",
           },
           replyToId: {
             type: "string",
@@ -1573,6 +1579,7 @@ export const openApiSpec: OpenAPIV3.Document = {
           "encryptedKey",
           "selfEncryptedKey",
           "keyId",
+          "operatorUuid",
         ],
       },
       UpdateConsentRequest: {

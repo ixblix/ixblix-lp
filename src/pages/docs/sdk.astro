@@ -199,7 +199,7 @@ await client.sendEncryptedMessage(
   options: {
     content?: string,        // plaintext (required for text, optional caption for media)
     file?: { data: Uint8Array, fileName: string, mimeType: string },
-    operatorUuid?: string,
+    operatorUuid: string,
     replyToId?: string | null,
     attachments?: { buttons?, vcard?, location?, linkPreview? },
     operatorIdentity?: { uuid, name, image?, gravatarHash? },

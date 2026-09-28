@@ -1,147 +1,209 @@
 const en = {
   // Nav
-  'nav.gettingStarted': 'Getting Started',
-  'nav.quickStart': 'Quick Start',
-  'nav.integratorRegistration': 'Integrator Registration',
-  'nav.companyRegistration': 'Company Registration',
-  'nav.messaging': 'Send & Receive Messages',
-  'nav.guides': 'Guides',
-  'nav.webhooks': 'Webhooks',
-  'nav.e2eEncryption': 'End-to-End Encryption',
-  'nav.richMessages': 'Rich Messages',
-  'nav.media': 'Media Attachments',
-  'nav.presence': 'Presence & Typing',
-  'nav.keyTransfer': 'Key Transfer',
-  'nav.reference': 'Reference',
-  'nav.auth': 'Authentication',
-  'nav.errors': 'Error Handling',
-  'nav.sdk': 'JavaScript SDK',
-  'nav.apiReference': 'API Reference ↗',
-  'nav.github': 'GitHub ↗',
-  'nav.apiExplorer': 'Interactive API Reference',
+  "nav.gettingStarted": "Getting Started",
+  "nav.quickStart": "Quick Start",
+  "nav.integratorRegistration": "Integrator Registration",
+  "nav.companyRegistration": "Company Registration",
+  "nav.messaging": "Send & Receive Messages",
+  "nav.guides": "Guides",
+  "nav.webhooks": "Webhooks",
+  "nav.e2eEncryption": "End-to-End Encryption",
+  "nav.richMessages": "Rich Messages",
+  "nav.media": "Media Attachments",
+  "nav.presence": "Presence & Typing",
+  "nav.keyTransfer": "Key Transfer",
+  "nav.reference": "Reference",
+  "nav.auth": "Authentication",
+  "nav.errors": "Error Handling",
+  "nav.sdk": "JavaScript SDK",
+  "nav.apiReference": "API Reference ↗",
+  "nav.github": "GitHub ↗",
+  "nav.apiExplorer": "Interactive API Reference",
 
   // API Reference page
-  'api.title': 'API Reference',
-  'api.guides': 'Guides',
+  "api.title": "API Reference",
+  "api.guides": "Guides",
 
   // Home
-  'home.tagline': 'Independent commercial messaging platform. Integrate secure, white-labeled conversations into your CRM or help desk with end-to-end encryption.',
-  'home.cta.start': 'Quick Start Guide',
-  'home.cta.api': 'API Reference',
-  'home.features.title': 'Everything you need to integrate',
-  'home.features.e2ee.title': 'End-to-End Encryption',
-  'home.features.e2ee.desc': 'Hybrid RSA + AES-256-GCM encryption. Messages are encrypted client-side — the server never sees plaintext.',
-  'home.features.webhooks.title': 'Webhook-Driven',
-  'home.features.webhooks.desc': 'Receive real-time events via signed webhooks. Messages, presence, read receipts — all delivered to your endpoint.',
-  'home.features.whitelabel.title': 'White-Label',
-  'home.features.whitelabel.desc': 'Your brand, your experience. Customize colors, logos, and domain for each company.',
-  'home.features.rich.title': 'Rich Messages',
-  'home.features.rich.desc': 'Quick replies, URLs, copy-to-clipboard, Pix codes, vCards, and location sharing — all encrypted.',
-  'home.features.multiplatform.title': 'Multi-Platform',
-  'home.features.multiplatform.desc': 'Customers chat via PWA, iOS, or Android. Operators integrate via REST API and webhooks.',
-  'home.features.sdk.title': 'JavaScript SDK',
-  'home.features.sdk.desc': 'Official @ixblix/sdk-js package with typed HTTP client, crypto helpers, and webhook verification.',
-  'home.ctaSection.title': 'Ready to integrate?',
-  'home.ctaSection.desc': 'Start with the quick start guide and have your first conversation running in minutes.',
-  'home.ctaSection.button': 'Get Started',
+  "home.tagline":
+    "Independent commercial messaging platform. Integrate secure, white-labeled conversations into your CRM or help desk with end-to-end encryption.",
+  "home.cta.start": "Quick Start Guide",
+  "home.cta.api": "API Reference",
+  "home.features.title": "Everything you need to integrate",
+  "home.features.e2ee.title": "End-to-End Encryption",
+  "home.features.e2ee.desc":
+    "Hybrid RSA + AES-256-GCM encryption. Messages are encrypted client-side — the server never sees plaintext.",
+  "home.features.webhooks.title": "Webhook-Driven",
+  "home.features.webhooks.desc":
+    "Receive real-time events via signed webhooks. Messages, presence, read receipts — all delivered to your endpoint.",
+  "home.features.whitelabel.title": "White-Label",
+  "home.features.whitelabel.desc":
+    "Your brand, your experience. Customize colors, logos, and domain for each company.",
+  "home.features.rich.title": "Rich Messages",
+  "home.features.rich.desc":
+    "Quick replies, URLs, copy-to-clipboard, Pix codes, vCards, and location sharing — all encrypted.",
+  "home.features.multiplatform.title": "Multi-Platform",
+  "home.features.multiplatform.desc":
+    "Customers chat via PWA, iOS, or Android. Operators integrate via REST API and webhooks.",
+  "home.features.sdk.title": "JavaScript SDK",
+  "home.features.sdk.desc":
+    "Official @ixblix/sdk-js package with typed HTTP client, crypto helpers, and webhook verification.",
+  "home.ctaSection.title": "Ready to integrate?",
+  "home.ctaSection.desc":
+    "Start with the quick start guide and have your first conversation running in minutes.",
+  "home.ctaSection.button": "Get Started",
 
   // AI Agent Skills
-  'home.skills.title': 'AI Agent Skills',
-  'home.skills.desc': 'Add these skill files to your AI agent (Claude, ChatGPT, Copilot, etc.) to enable full ixblix integration capabilities.',
-  'home.skills.api.title': 'REST API Skill',
-  'home.skills.api.desc': 'Complete integration guide using direct HTTP/cURL calls. No SDK required.',
-  'home.skills.api.download': 'Download API Skill',
-  'home.skills.sdk.title': 'JavaScript SDK Skill',
-  'home.skills.sdk.desc': 'Full integration guide using the official @ixblix/sdk-js TypeScript package.',
-  'home.skills.sdk.download': 'Download SDK Skill',
-  'home.skills.instructions.title': 'How to Add Skills to Your AI Agent',
-  'home.skills.instructions.claude.title': 'Claude (Anthropic)',
-  'home.skills.instructions.claude.step1': 'Download the skill file above',
-  'home.skills.instructions.claude.step2': 'Open Claude and go to Projects',
-  'home.skills.instructions.claude.step3': 'Create a new project or edit existing',
-  'home.skills.instructions.claude.step4': 'Click "Add Knowledge" → "Upload file"',
-  'home.skills.instructions.claude.step5': 'Upload the downloaded .md file',
-  'home.skills.instructions.claude.step6': 'Claude now has full ixblix integration knowledge',
-  'home.skills.instructions.chatgpt.title': 'ChatGPT (OpenAI)',
-  'home.skills.instructions.chatgpt.step1': 'Download the skill file above',
-  'home.skills.instructions.chatgpt.step2': 'Open ChatGPT and go to "Create a GPT"',
-  'home.skills.instructions.chatgpt.step3': 'In the "Configure" tab, scroll to "Knowledge"',
-  'home.skills.instructions.chatgpt.step4': 'Click "Upload" and select the .md file',
-  'home.skills.instructions.chatgpt.step5': 'Your custom GPT now knows ixblix integration',
-  'home.skills.instructions.copilot.title': 'GitHub Copilot',
-  'home.skills.instructions.copilot.step1': 'Download the skill file above',
-  'home.skills.instructions.copilot.step2': 'Place it in your project\'s <code>.github/instructions/</code> folder',
-  'home.skills.instructions.copilot.step3': 'Or add it to your <code>.github/copilot-instructions.md</code>',
-  'home.skills.instructions.copilot.step4': 'Copilot will reference it when answering ixblix questions',
-  'home.skills.instructions.cursor.title': 'Cursor / Windsurf / Other IDEs',
-  'home.skills.instructions.cursor.step1': 'Download the skill file above',
-  'home.skills.instructions.cursor.step2': 'Place it in your project root or <code>.cursor/rules/</code> folder',
-  'home.skills.instructions.cursor.step3': 'Reference it in your agent\'s system prompt or rules file',
-  'home.skills.instructions.cursor.step4': 'The agent will use it as context for ixblix integration tasks',
+  "home.skills.title": "AI Agent Skills",
+  "home.skills.desc":
+    "Add these skill files to your AI agent (Claude, ChatGPT, Copilot, etc.) to enable full ixblix integration capabilities.",
+  "home.skills.api.title": "REST API Skill",
+  "home.skills.api.desc":
+    "Complete integration guide using direct HTTP/cURL calls. No SDK required.",
+  "home.skills.api.download": "Download API Skill",
+  "home.skills.sdk.title": "JavaScript SDK Skill",
+  "home.skills.sdk.desc":
+    "Full integration guide using the official @ixblix/sdk-js TypeScript package.",
+  "home.skills.sdk.download": "Download SDK Skill",
+  "home.skills.instructions.title": "How to Add Skills to Your AI Agent",
+  "home.skills.instructions.claude.title": "Claude (Anthropic)",
+  "home.skills.instructions.claude.step1": "Download the skill file above",
+  "home.skills.instructions.claude.step2": "Open Claude and go to Projects",
+  "home.skills.instructions.claude.step3":
+    "Create a new project or edit existing",
+  "home.skills.instructions.claude.step4":
+    'Click "Add Knowledge" → "Upload file"',
+  "home.skills.instructions.claude.step5": "Upload the downloaded .md file",
+  "home.skills.instructions.claude.step6":
+    "Claude now has full ixblix integration knowledge",
+  "home.skills.instructions.chatgpt.title": "ChatGPT (OpenAI)",
+  "home.skills.instructions.chatgpt.step1": "Download the skill file above",
+  "home.skills.instructions.chatgpt.step2":
+    'Open ChatGPT and go to "Create a GPT"',
+  "home.skills.instructions.chatgpt.step3":
+    'In the "Configure" tab, scroll to "Knowledge"',
+  "home.skills.instructions.chatgpt.step4":
+    'Click "Upload" and select the .md file',
+  "home.skills.instructions.chatgpt.step5":
+    "Your custom GPT now knows ixblix integration",
+  "home.skills.instructions.copilot.title": "GitHub Copilot",
+  "home.skills.instructions.copilot.step1": "Download the skill file above",
+  "home.skills.instructions.copilot.step2":
+    "Place it in your project's <code>.github/instructions/</code> folder",
+  "home.skills.instructions.copilot.step3":
+    "Or add it to your <code>.github/copilot-instructions.md</code>",
+  "home.skills.instructions.copilot.step4":
+    "Copilot will reference it when answering ixblix questions",
+  "home.skills.instructions.cursor.title": "Cursor / Windsurf / Other IDEs",
+  "home.skills.instructions.cursor.step1": "Download the skill file above",
+  "home.skills.instructions.cursor.step2":
+    "Place it in your project root or <code>.cursor/rules/</code> folder",
+  "home.skills.instructions.cursor.step3":
+    "Reference it in your agent's system prompt or rules file",
+  "home.skills.instructions.cursor.step4":
+    "The agent will use it as context for ixblix integration tasks",
 
   // Privacy
-  'privacy.title': 'Privacy & Data Protection Policy',
-  'privacy.effective': 'Effective date',
-  'privacy.controller.title': 'Data Controller',
-  'privacy.controller.text': 'The data controller responsible for your personal data is TODOBOM.COM Tecnologia da Informação LTDA, a company organized under the laws of the Federative Republic of Brazil. For any privacy-related inquiry, contact us at privacy@ixblix.app.',
-  'privacy.overview.title': 'Overview',
-  'privacy.overview.text': 'This policy describes how TODOBOM.COM Tecnologia da Informação LTDA ("we", "us", "our") collects, uses, stores, and protects personal data in connection with the ixblix platform. This policy complies with the Brazilian General Data Protection Law (LGPD — Lei nº 13.709/2018) and the EU General Data Protection Regulation (GDPR — Regulation 2016/679).',
-  'privacy.noPlaintext.title': 'No Plain-Text Data Storage',
-  'privacy.noPlaintext.text': 'ixblix does not store message content in plain text. All conversation data is encrypted end-to-end using hybrid RSA + AES-256-GCM encryption. The server never has access to the unencrypted content of messages exchanged between contacts and operators. This is a fundamental architectural guarantee, not merely a policy commitment.',
-  'privacy.dataCategories.title': 'Categories of Personal Data',
-  'privacy.dataCategories.text': 'We may process the following categories of personal data:',
-  'privacy.dataCategories.item1': 'Identification data — name, email address, phone number, and other identifiers provided during conversation setup.',
-  'privacy.dataCategories.item2': 'Conversation metadata — timestamps, participant identifiers, delivery and read status, message counts, and conversation lifecycle events.',
-  'privacy.dataCategories.item3': 'Technical data — IP address, browser type, device identifiers, and session tokens necessary for service delivery.',
-  'privacy.dataCategories.item4': 'Consent records — timestamp, scope, and method of consent collection as required by applicable law.',
-  'privacy.legalBases.title': 'Legal Bases for Processing',
-  'privacy.legalBases.text': 'We process personal data only when we have a valid legal basis. The legal bases we rely on are:',
-  'privacy.legalBases.item1': 'Consent — the data subject has given clear, informed, and unambiguous consent for specific purposes (LGPD Art. 7, I; GDPR Art. 6(1)(a)).',
-  'privacy.legalBases.item2': 'Contract performance — processing is necessary for the performance of a contract or pre-contractual measures (LGPD Art. 7, V; GDPR Art. 6(1)(b)).',
-  'privacy.legalBases.item3': 'Legitimate interest — processing is necessary for our legitimate interests, provided the data subject\'s rights are not overridden (LGPD Art. 7, IX; GDPR Art. 6(1)(f)).',
-  'privacy.legalBases.item4': 'Legal obligation — processing is necessary for compliance with a legal or regulatory obligation (LGPD Art. 7, II; GDPR Art. 6(1)(c)).',
-  'privacy.purposes.title': 'Purposes of Processing',
-  'privacy.purposes.text': 'Personal data is processed for the following specific purposes:',
-  'privacy.purposes.item1': 'Providing and operating the ixblix messaging platform, including conversation routing, delivery, and presence notifications.',
-  'privacy.purposes.item2': 'Authenticating and authorizing companies, operators, and contacts to access the platform.',
-  'privacy.purposes.item3': 'Recording billing events and managing payment processing for platform usage.',
-  'privacy.purposes.item4': 'Complying with legal, regulatory, and contractual obligations, including data retention and law enforcement requests.',
-  'privacy.purposes.item5': 'Ensuring platform security, fraud prevention, and incident response.',
-  'privacy.consent.title': 'Consent',
-  'privacy.consent.text': 'Where processing is based on consent, the data subject may withdraw consent at any time. Withdrawal does not affect the lawfulness of processing before withdrawal. Consent collected by ixblix pertains to the operation of the messaging service and may include the storage of certain metadata necessary for service delivery. Consent does not imply storage of plain-text message content.',
-  'privacy.metadata.title': 'Metadata',
-  'privacy.metadata.text': 'Operational metadata — such as conversation timestamps, participant identifiers, delivery status, and message counts — may be retained to ensure proper service functioning. This metadata does not include the actual content of communications, which remains encrypted end-to-end.',
-  'privacy.retention.title': 'Data Retention',
-  'privacy.retention.text': 'All personal data, including metadata and conversation records, is retained for a maximum period of 90 days from the date of collection or last interaction. After this period, data is automatically and irreversibly purged from our systems. Retention periods may be extended only when required by law or for the establishment of legal claims.',
-  'privacy.security.title': 'Security Measures',
-  'privacy.security.text': 'We implement appropriate technical and organizational measures to protect personal data against unauthorized access, alteration, disclosure, or destruction. These measures include end-to-end encryption (RSA + AES-256-GCM), encrypted data at rest, access controls, regular security audits, and secure software development practices.',
-  'privacy.transfers.title': 'International Data Transfers',
-  'privacy.transfers.text': 'Personal data may be transferred to countries outside Brazil or the European Economic Area only when the destination country ensures an adequate level of data protection, or when appropriate safeguards are in place (standard contractual clauses, binding corporate rules, or explicit consent). In all cases, we ensure that the transfer complies with LGPD Chapter V and GDPR Chapter V.',
-  'privacy.rights.title': 'Data Subject Rights',
-  'privacy.rights.text': 'Under the LGPD (Art. 18) and the GDPR (Arts. 15–21), data subjects have the following rights:',
-  'privacy.rights.item1': 'Right of access — obtain confirmation of whether personal data is being processed and access to it.',
-  'privacy.rights.item2': 'Right to rectification — request correction of inaccurate, incomplete, or outdated data.',
-  'privacy.rights.item3': 'Right to erasure (right to be forgotten) — request deletion of personal data when processing is no longer necessary or consent is withdrawn.',
-  'privacy.rights.item4': 'Right to data portability — receive personal data in a structured, machine-readable format and transmit it to another controller.',
-  'privacy.rights.item5': 'Right to restriction of processing — request limitation of processing in certain circumstances.',
-  'privacy.rights.item6': 'Right to object — object to processing based on legitimate interests or for direct marketing purposes.',
-  'privacy.rights.item7': 'Right to withdraw consent — withdraw previously given consent at any time, without affecting prior lawful processing.',
-  'privacy.rights.item8': 'Right not to be subject to automated decisions — request review of decisions made solely by automated means.',
-  'privacy.rights.exercise': 'To exercise any of these rights, contact us at privacy@ixblix.app. We will respond within 15 business days (LGPD) or one month (GDPR).',
-  'privacy.minors.title': 'Minors',
-  'privacy.minors.text': 'ixblix is not directed to children under 16. We do not knowingly collect personal data from minors without parental or legal guardian consent. If we become aware that personal data has been collected from a minor without proper consent, we will delete it promptly.',
-  'privacy.changes.title': 'Changes to This Policy',
-  'privacy.changes.text': 'We may update this policy from time to time. Material changes will be communicated via our website or directly to affected data subjects. The "Effective date" at the top indicates when the policy was last revised. Continued use of the platform after changes constitutes acceptance of the updated policy.',
-  'privacy.dpo.title': 'Data Protection Officer',
-  'privacy.dpo.text': 'Our Data Protection Officer (DPO) can be reached at privacy@ixblix.app. The DPO is responsible for overseeing data protection practices, handling data subject requests, and serving as the point of contact with supervisory authorities.',
-  'privacy.authority.title': 'Supervisory Authorities',
-  'privacy.authority.text': 'Under the LGPD, data subjects may file complaints with the Brazilian National Data Protection Authority (ANPD — Autoridade Nacional de Proteção de Dados). Under the GDPR, data subjects may lodge complaints with their local supervisory authority. We encourage you to contact us first so we can resolve your concern directly.',
+  "privacy.title": "Privacy & Data Protection Policy",
+  "privacy.effective": "Effective date",
+  "privacy.controller.title": "Data Controller",
+  "privacy.controller.text":
+    "The data controller responsible for your personal data is TODOBOM.COM Tecnologia da Informação LTDA, a company organized under the laws of the Federative Republic of Brazil. For any privacy-related inquiry, contact us at privacy@ixblix.app.",
+  "privacy.overview.title": "Overview",
+  "privacy.overview.text":
+    'This policy describes how TODOBOM.COM Tecnologia da Informação LTDA ("we", "us", "our") collects, uses, stores, and protects personal data in connection with the ixblix platform. This policy complies with the Brazilian General Data Protection Law (LGPD — Lei nº 13.709/2018) and the EU General Data Protection Regulation (GDPR — Regulation 2016/679).',
+  "privacy.noPlaintext.title": "No Plain-Text Data Storage",
+  "privacy.noPlaintext.text":
+    "ixblix does not store message content in plain text. All conversation data is encrypted end-to-end using hybrid RSA + AES-256-GCM encryption. The server never has access to the unencrypted content of messages exchanged between contacts and operators. This is a fundamental architectural guarantee, not merely a policy commitment.",
+  "privacy.dataCategories.title": "Categories of Personal Data",
+  "privacy.dataCategories.text":
+    "We may process the following categories of personal data:",
+  "privacy.dataCategories.item1":
+    "Identification data — name, email address, phone number, and other identifiers provided during conversation setup.",
+  "privacy.dataCategories.item2":
+    "Conversation metadata — timestamps, participant identifiers, delivery and read status, message counts, and conversation lifecycle events.",
+  "privacy.dataCategories.item3":
+    "Technical data — IP address, browser type, device identifiers, and session tokens necessary for service delivery.",
+  "privacy.dataCategories.item4":
+    "Consent records — timestamp, scope, and method of consent collection as required by applicable law.",
+  "privacy.legalBases.title": "Legal Bases for Processing",
+  "privacy.legalBases.text":
+    "We process personal data only when we have a valid legal basis. The legal bases we rely on are:",
+  "privacy.legalBases.item1":
+    "Consent — the data subject has given clear, informed, and unambiguous consent for specific purposes (LGPD Art. 7, I; GDPR Art. 6(1)(a)).",
+  "privacy.legalBases.item2":
+    "Contract performance — processing is necessary for the performance of a contract or pre-contractual measures (LGPD Art. 7, V; GDPR Art. 6(1)(b)).",
+  "privacy.legalBases.item3":
+    "Legitimate interest — processing is necessary for our legitimate interests, provided the data subject's rights are not overridden (LGPD Art. 7, IX; GDPR Art. 6(1)(f)).",
+  "privacy.legalBases.item4":
+    "Legal obligation — processing is necessary for compliance with a legal or regulatory obligation (LGPD Art. 7, II; GDPR Art. 6(1)(c)).",
+  "privacy.purposes.title": "Purposes of Processing",
+  "privacy.purposes.text":
+    "Personal data is processed for the following specific purposes:",
+  "privacy.purposes.item1":
+    "Providing and operating the ixblix messaging platform, including conversation routing, delivery, and presence notifications.",
+  "privacy.purposes.item2":
+    "Authenticating and authorizing companies, operators, and contacts to access the platform.",
+  "privacy.purposes.item3":
+    "Recording billing events and managing payment processing for platform usage.",
+  "privacy.purposes.item4":
+    "Complying with legal, regulatory, and contractual obligations, including data retention and law enforcement requests.",
+  "privacy.purposes.item5":
+    "Ensuring platform security, fraud prevention, and incident response.",
+  "privacy.consent.title": "Consent",
+  "privacy.consent.text":
+    "Where processing is based on consent, the data subject may withdraw consent at any time. Withdrawal does not affect the lawfulness of processing before withdrawal. Consent collected by ixblix pertains to the operation of the messaging service and may include the storage of certain metadata necessary for service delivery. Consent does not imply storage of plain-text message content.",
+  "privacy.metadata.title": "Metadata",
+  "privacy.metadata.text":
+    "Operational metadata — such as conversation timestamps, participant identifiers, delivery status, and message counts — may be retained to ensure proper service functioning. This metadata does not include the actual content of communications, which remains encrypted end-to-end.",
+  "privacy.retention.title": "Data Retention",
+  "privacy.retention.text":
+    "All personal data, including metadata and conversation records, is retained for a maximum period of 90 days from the date of collection or last interaction. After this period, data is automatically and irreversibly purged from our systems. Retention periods may be extended only when required by law or for the establishment of legal claims.",
+  "privacy.security.title": "Security Measures",
+  "privacy.security.text":
+    "We implement appropriate technical and organizational measures to protect personal data against unauthorized access, alteration, disclosure, or destruction. These measures include end-to-end encryption (RSA + AES-256-GCM), encrypted data at rest, access controls, regular security audits, and secure software development practices.",
+  "privacy.transfers.title": "International Data Transfers",
+  "privacy.transfers.text":
+    "Personal data may be transferred to countries outside Brazil or the European Economic Area only when the destination country ensures an adequate level of data protection, or when appropriate safeguards are in place (standard contractual clauses, binding corporate rules, or explicit consent). In all cases, we ensure that the transfer complies with LGPD Chapter V and GDPR Chapter V.",
+  "privacy.rights.title": "Data Subject Rights",
+  "privacy.rights.text":
+    "Under the LGPD (Art. 18) and the GDPR (Arts. 15–21), data subjects have the following rights:",
+  "privacy.rights.item1":
+    "Right of access — obtain confirmation of whether personal data is being processed and access to it.",
+  "privacy.rights.item2":
+    "Right to rectification — request correction of inaccurate, incomplete, or outdated data.",
+  "privacy.rights.item3":
+    "Right to erasure (right to be forgotten) — request deletion of personal data when processing is no longer necessary or consent is withdrawn.",
+  "privacy.rights.item4":
+    "Right to data portability — receive personal data in a structured, machine-readable format and transmit it to another controller.",
+  "privacy.rights.item5":
+    "Right to restriction of processing — request limitation of processing in certain circumstances.",
+  "privacy.rights.item6":
+    "Right to object — object to processing based on legitimate interests or for direct marketing purposes.",
+  "privacy.rights.item7":
+    "Right to withdraw consent — withdraw previously given consent at any time, without affecting prior lawful processing.",
+  "privacy.rights.item8":
+    "Right not to be subject to automated decisions — request review of decisions made solely by automated means.",
+  "privacy.rights.exercise":
+    "To exercise any of these rights, contact us at privacy@ixblix.app. We will respond within 15 business days (LGPD) or one month (GDPR).",
+  "privacy.minors.title": "Minors",
+  "privacy.minors.text":
+    "ixblix is not directed to children under 16. We do not knowingly collect personal data from minors without parental or legal guardian consent. If we become aware that personal data has been collected from a minor without proper consent, we will delete it promptly.",
+  "privacy.changes.title": "Changes to This Policy",
+  "privacy.changes.text":
+    'We may update this policy from time to time. Material changes will be communicated via our website or directly to affected data subjects. The "Effective date" at the top indicates when the policy was last revised. Continued use of the platform after changes constitutes acceptance of the updated policy.',
+  "privacy.dpo.title": "Data Protection Officer",
+  "privacy.dpo.text":
+    "Our Data Protection Officer (DPO) can be reached at privacy@ixblix.app. The DPO is responsible for overseeing data protection practices, handling data subject requests, and serving as the point of contact with supervisory authorities.",
+  "privacy.authority.title": "Supervisory Authorities",
+  "privacy.authority.text":
+    "Under the LGPD, data subjects may file complaints with the Brazilian National Data Protection Authority (ANPD — Autoridade Nacional de Proteção de Dados). Under the GDPR, data subjects may lodge complaints with their local supervisory authority. We encourage you to contact us first so we can resolve your concern directly.",
 
   // Common
-  'common.prev': '← Previous',
-  'common.next': 'Next →',
-  'common.copy': 'Copy',
-  'common.copied': 'Copied!',
+  "common.prev": "← Previous",
+  "common.next": "Next →",
+  "common.copy": "Copy",
+  "common.copied": "Copied!",
 };
 
 export default en;

@@ -268,9 +268,9 @@ await waitForCustomer(conversation.id);`} title="wait-for-customer.ts" />
   <CodeBlock language="typescript" code={`// Text message with operator identity embedded in the encrypted attachments.
 await companyWithKey.sendEncryptedMessage(conversation.id, {
   content: 'Hello Jane! How can we help you today?',
-  operatorUuid: 'agent-42',
+  operatorUuid: '550e8400-e29b-41d4-a716-446655440000',
   operatorIdentity: {
-    uuid: 'agent-42',
+    uuid: '550e8400-e29b-41d4-a716-446655440000',
     name: 'Maria Silva',
     gravatarHash: md5('maria@example.com'),
   },
@@ -306,13 +306,13 @@ for (const message of messages) {
 const bytes = await readFile('./invoice.pdf');
 await companyWithKey.sendEncryptedMessage(conversation.id, {
   file: { data: bytes, fileName: 'invoice.pdf', mimeType: 'application/pdf' },
-  operatorUuid: 'agent-42',
+  operatorUuid: '550e8400-e29b-41d4-a716-446655440000',
 });
 
 // 2. Rich text message (quick replies, buttons, ...).
 await companyWithKey.sendEncryptedMessage(conversation.id, {
   content: 'Your ticket is ready.',
-  operatorUuid: 'agent-42',
+  operatorUuid: '550e8400-e29b-41d4-a716-446655440000',
   attachments: {
     buttons: [{ type: 'reply', label: 'Open ticket', value: 'open' }],
   },
@@ -322,7 +322,7 @@ await companyWithKey.sendEncryptedMessage(conversation.id, {
 await companyWithKey.sendEncryptedMessage(conversation.id, {
   content: 'Here is your invoice.',
   file: { data: bytes, fileName: 'invoice.pdf', mimeType: 'application/pdf' },
-  operatorUuid: 'agent-42',
+  operatorUuid: '550e8400-e29b-41d4-a716-446655440000',
   attachments: {
     buttons: [{ type: 'reply', label: 'Open ticket', value: 'open' }],
   },
@@ -341,9 +341,9 @@ await companyWithKey.markMessageDeliveredByCompany(conversation.id, messageId);
 await companyWithKey.markMessageReadByCompany(conversation.id, messageId);
 
 // React with an emoji (encrypted to the customer, sent as contentType "react").
-await companyWithKey.reactToMessage(conversation.id, messageId, '👍', 'agent-42');
+await companyWithKey.reactToMessage(conversation.id, messageId, '👍', '550e8400-e29b-41d4-a716-446655440000');
 // Pass an empty string to clear your reaction:
-// await companyWithKey.reactToMessage(conversation.id, messageId, '', 'agent-42');`} title="presence-read-react.ts" />
+// await companyWithKey.reactToMessage(conversation.id, messageId, '', '550e8400-e29b-41d4-a716-446655440000');`} title="presence-read-react.ts" />
 
   <h2>Step 15 — Close and erase a conversation</h2>
   <p>
@@ -397,7 +397,7 @@ async function main() {
   // 4. Open a conversation and share the deeplink
   const { conversation, deeplink } = await company.createConversation({
     contact: { externalId: 'whatsapp_5511999999999', name: 'Jane Doe' },
-    operator: { uuid: 'agent-42', name: 'Maria Silva' },
+    operator: { uuid: '550e8400-e29b-41d4-a716-446655440000', name: 'Maria Silva' },
   });
   console.log('Share this link:', deeplink);
 
@@ -411,9 +411,9 @@ async function main() {
   // sendEncryptedMessage fetches keys, encrypts and sends in one call.
   await company.sendEncryptedMessage(conversation.id, {
     content: 'Hello! How can we help?',
-    operatorUuid: 'agent-42',
+    operatorUuid: '550e8400-e29b-41d4-a716-446655440000',
     operatorIdentity: {
-      uuid: 'agent-42',
+      uuid: '550e8400-e29b-41d4-a716-446655440000',
       name: 'Maria Silva',
       gravatarHash: md5('maria@example.com'),
     },
