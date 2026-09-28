@@ -1,0 +1,130 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { t } from '../../i18n';
+import type { Locale } from '../../i18n/config';
+
+const locale: Locale = 'es';
+---
+
+<BaseLayout title={`${t(locale, 'privacy.title')} — ixblix`} locale="es">
+  <div class="legal-page">
+    <div class="container">
+      <h1>{t(locale, 'privacy.title')}</h1>
+      <p class="meta">{t(locale, 'privacy.effective')}: 2026-09-28</p>
+      <p class="company">TODOBOM.COM Tecnologia da Informação LTDA</p>
+
+      <h2>1. {t(locale, 'privacy.controller.title')}</h2>
+      <p>{t(locale, 'privacy.controller.text')}</p>
+
+      <h2>2. {t(locale, 'privacy.overview.title')}</h2>
+      <p>{t(locale, 'privacy.overview.text')}</p>
+
+      <h2>3. {t(locale, 'privacy.noPlaintext.title')}</h2>
+      <p>{t(locale, 'privacy.noPlaintext.text')}</p>
+
+      <h2>4. {t(locale, 'privacy.dataCategories.title')}</h2>
+      <p>{t(locale, 'privacy.dataCategories.text')}</p>
+      <ul>
+        <li>{t(locale, 'privacy.dataCategories.item1')}</li>
+        <li>{t(locale, 'privacy.dataCategories.item2')}</li>
+        <li>{t(locale, 'privacy.dataCategories.item3')}</li>
+        <li>{t(locale, 'privacy.dataCategories.item4')}</li>
+      </ul>
+
+      <h2>5. {t(locale, 'privacy.legalBases.title')}</h2>
+      <p>{t(locale, 'privacy.legalBases.text')}</p>
+      <ul>
+        <li>{t(locale, 'privacy.legalBases.item1')}</li>
+        <li>{t(locale, 'privacy.legalBases.item2')}</li>
+        <li>{t(locale, 'privacy.legalBases.item3')}</li>
+        <li>{t(locale, 'privacy.legalBases.item4')}</li>
+      </ul>
+
+      <h2>6. {t(locale, 'privacy.purposes.title')}</h2>
+      <p>{t(locale, 'privacy.purposes.text')}</p>
+      <ul>
+        <li>{t(locale, 'privacy.purposes.item1')}</li>
+        <li>{t(locale, 'privacy.purposes.item2')}</li>
+        <li>{t(locale, 'privacy.purposes.item3')}</li>
+        <li>{t(locale, 'privacy.purposes.item4')}</li>
+        <li>{t(locale, 'privacy.purposes.item5')}</li>
+      </ul>
+
+      <h2>7. {t(locale, 'privacy.consent.title')}</h2>
+      <p>{t(locale, 'privacy.consent.text')}</p>
+
+      <h2>8. {t(locale, 'privacy.metadata.title')}</h2>
+      <p>{t(locale, 'privacy.metadata.text')}</p>
+
+      <h2>9. {t(locale, 'privacy.retention.title')}</h2>
+      <p>{t(locale, 'privacy.retention.text')}</p>
+
+      <h2>10. {t(locale, 'privacy.security.title')}</h2>
+      <p>{t(locale, 'privacy.security.text')}</p>
+
+      <h2>11. {t(locale, 'privacy.transfers.title')}</h2>
+      <p>{t(locale, 'privacy.transfers.text')}</p>
+
+      <h2>12. {t(locale, 'privacy.rights.title')}</h2>
+      <p>{t(locale, 'privacy.rights.text')}</p>
+      <ul>
+        <li>{t(locale, 'privacy.rights.item1')}</li>
+        <li>{t(locale, 'privacy.rights.item2')}</li>
+        <li>{t(locale, 'privacy.rights.item3')}</li>
+        <li>{t(locale, 'privacy.rights.item4')}</li>
+        <li>{t(locale, 'privacy.rights.item5')}</li>
+        <li>{t(locale, 'privacy.rights.item6')}</li>
+        <li>{t(locale, 'privacy.rights.item7')}</li>
+        <li>{t(locale, 'privacy.rights.item8')}</li>
+      </ul>
+      <p>{t(locale, 'privacy.rights.exercise')}</p>
+
+      <h2>13. {t(locale, 'privacy.minors.title')}</h2>
+      <p>{t(locale, 'privacy.minors.text')}</p>
+
+      <h2>14. {t(locale, 'privacy.changes.title')}</h2>
+      <p>{t(locale, 'privacy.changes.text')}</p>
+
+      <h2>15. {t(locale, 'privacy.dpo.title')}</h2>
+      <p>{t(locale, 'privacy.dpo.text')}</p>
+
+      <h2>16. {t(locale, 'privacy.authority.title')}</h2>
+      <p>{t(locale, 'privacy.authority.text')}</p>
+    </div>
+  </div>
+</BaseLayout>
+
+<style>
+  .legal-page {
+    min-height: 100vh;
+    background: var(--bg);
+    color: var(--text);
+    padding: 3rem 1rem;
+  }
+  .container {
+    max-width: 720px;
+    margin: 0 auto;
+  }
+  h1 {
+    font-size: 2rem;
+    margin-bottom: 0.5rem;
+  }
+  .meta {
+    color: var(--text-muted);
+    font-size: 0.9rem;
+    margin-bottom: 0.25rem;
+  }
+  .company {
+    font-weight: 600;
+    margin-bottom: 2rem;
+  }
+  h2 {
+    font-size: 1.25rem;
+    margin-top: 2rem;
+    margin-bottom: 0.5rem;
+  }
+  p {
+    line-height: 1.7;
+    margin-bottom: 1rem;
+  }
+</style>
