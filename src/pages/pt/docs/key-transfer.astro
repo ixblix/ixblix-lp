@@ -64,20 +64,27 @@ const locale: Locale = 'pt';
   </ol>
 
   <h2>Transferência Rápida (na conversa)</h2>
-  <p>Quando o cliente abre uma conversa em um novo dispositivo e não consegue descriptografar o histórico, a página de chat oferece importar a chave de outro dispositivo onde a mesma conversa está aberta. O <code>transferId</code> é trocado pela conexão Socket.io compartilhada em vez de um link, então o usuário só lê o PIN em uma tela e digita na outra.</p>
+  <p>Quando o cliente abre uma conversa em um novo dispositivo e não consegue descriptografar o histórico, a página de chat oferece importar a chave de outro dispositivo. O <code>transferId</code> é trocado pela conexão Socket.io compartilhada em vez de um link, então o usuário só lê o PIN em uma tela e digita na outra.</p>
+  <p>O dispositivo de origem <strong>não</strong> precisa estar com a mesma conversa aberta — apenas com o app aberto e autenticado para o mesmo par de chaves. A lista de conversas é suficiente.</p>
   <p>Os eventos são roteados pela <strong>sala da chave do cliente</strong> (<code>customer:{'{'}customerPublicKey{'}'}</code>), então um dispositivo só recebe eventos do seu próprio par de chaves.</p>
 
   <table>
     <thead><tr><th>Direção</th><th>Evento</th><th>Payload</th></tr></thead>
     <tbody>
       <tr><td>destino → servidor</td><td><code>request_key_transfer</code></td><td><code>{'{ token }'}</code> — token de deeplink da conversa</td></tr>
-      <tr><td>servidor → origem</td><td><code>show_key_transfer_dialog</code></td><td>—</td></tr>
+      <tr><td>servidor → origem</td><td><code>show_key_transfer_dialog</code></td><td><code>{'{ conversationToken? }'}</code></td></tr>
       <tr><td>origem → servidor</td><td><code>send_transfer_id</code></td><td><code>{'{ transferId }'}</code></td></tr>
       <tr><td>servidor → destino</td><td><code>receive_transfer_id</code></td><td><code>{'{ transferId, conversationToken? }'}</code></td></tr>
     </tbody>
   </table>
 
-  <p><code>send_transfer_id</code> carrega apenas o <code>transferId</code>: o backend resolve a conversa à qual a transferência está vinculada e roteia o evento para a sala de chave dessa conversa. O vínculo é definido na criação a partir do <code>conversationToken</code> opcional em <code>POST /api/key-transfer</code>, que o backend resolve para o id da conversa <strong>no servidor</strong> — o cliente não pode reivindicar um id de conversa arbitrário. O token é devolvido na recuperação para que o destino possa voltar à conversa após importar a chave.</p>
+  <p><code>send_transfer_id</code> carrega apenas o <code>transferId</code>: o backend resolve a conversa à qual a transferência está vinculada e roteia o evento para a <strong>sala de chave</strong> dessa conversa. O vínculo é definido na criação a partir do <code>conversationToken</code> opcional em <code>POST /api/key-transfer</code>, que o backend resolve para o id da conversa <strong>no servidor</strong> — o cliente não pode reivindicar um id de conversa arbitrário. O token é devolvido na recuperação para que o destino possa voltar à conversa após importar a chave.</p>
+
+  <p>Duas propriedades fazem isso funcionar e são fáceis de quebrar:</p>
+  <ul>
+    <li><strong>O dispositivo solicitante entra na sala de chave.</strong> É ele que não consegue descriptografar, então normalmente não tem chave registrada e o <code>authenticate</code> o colocou na sala da conversa. Sem o join explícito, a resposta nunca chega até ele.</li>
+    <li><strong>Um dispositivo que não consegue descriptografar não registra sua chave.</strong> Registrar uma chave nova sobrescreveria a que o dispositivo de origem ainda possui, tornando a conversa inalcançável para ele e quebrando a transferência.</li>
+  </ul>
 
   <h2>Formato do Payload</h2>
   <CodeBlock language="json" code={`{
