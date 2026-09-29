@@ -88,7 +88,6 @@ export const openApiSpec: OpenAPIV3.Document = {
         properties: {
           id: { type: "string", format: "uuid" },
           name: { type: "string" },
-          handle: { type: "string" },
           apiKey: { type: "string", nullable: true },
           status: {
             type: "string",
@@ -114,7 +113,6 @@ export const openApiSpec: OpenAPIV3.Document = {
         required: [
           "id",
           "name",
-          "handle",
           "status",
           "balanceCents",
           "isActive",
@@ -228,11 +226,10 @@ export const openApiSpec: OpenAPIV3.Document = {
         properties: {
           id: { type: "string", format: "uuid" },
           name: { type: "string" },
-          handle: { type: "string" },
           websiteUrl: { type: "string", format: "uri", nullable: true },
           customizations: { $ref: "#/components/schemas/CompanyCustomization" },
         },
-        required: ["id", "name", "handle", "customizations"],
+        required: ["id", "name", "customizations"],
       },
       InstallationConfig: {
         type: "object",
@@ -257,14 +254,12 @@ export const openApiSpec: OpenAPIV3.Document = {
         properties: {
           name: { type: "string" },
           websiteUrl: { type: "string", format: "uri" },
-          handle: { type: "string" },
         },
       },
       RegisterCompanyRequest: {
         type: "object",
         properties: {
           name: { type: "string" },
-          handle: { type: "string" },
           planId: {
             type: "string",
             format: "uuid",
@@ -284,7 +279,7 @@ export const openApiSpec: OpenAPIV3.Document = {
               "Tax id (CPF/CNPJ) required by some gateways such as Asaas.",
           },
         },
-        required: ["name", "handle", "planId"],
+        required: ["name", "planId"],
       },
       RegisterCompanyResponse: {
         type: "object",
@@ -547,12 +542,11 @@ export const openApiSpec: OpenAPIV3.Document = {
             properties: {
               id: { type: "string", format: "uuid" },
               name: { type: "string" },
-              handle: { type: "string" },
               customizations: {
                 $ref: "#/components/schemas/CompanyCustomization",
               },
             },
-            required: ["id", "name", "handle", "customizations"],
+            required: ["id", "name", "customizations"],
           },
         },
         required: [
@@ -1811,7 +1805,7 @@ export const openApiSpec: OpenAPIV3.Document = {
         tags: ["Companies"],
         summary: "Update company configuration",
         description:
-          "Updates company identity settings after registration and payment. Allows changing the company name, public website URL and unique handle. The handle is normalized to lowercase and can be referenced with the !! prefix on public links.",
+          "Updates company identity settings after registration and payment. Allows changing the company name and public website URL.",
         operationId: "updateCompanyConfiguration",
         security: [{ ApiKeyAuth: [] }],
         requestBody: {
@@ -1839,20 +1833,20 @@ export const openApiSpec: OpenAPIV3.Document = {
         },
       },
     },
-    "/companies/public/{handle}": {
+    "/companies/public/{id}": {
       get: {
         tags: ["Companies"],
         summary: "Get public company profile",
         description:
-          "Returns a public, unauthenticated view of an active company by its handle. The handle may be provided with or without the leading !! prefix. Includes the company's visual customization so it can be rendered on a public page.",
-        operationId: "getPublicCompanyByHandle",
+          "Returns a public, unauthenticated view of an active company by its ID. Includes the company's visual customization so it can be rendered on a public page.",
+        operationId: "getPublicCompanyById",
         parameters: [
           {
-            name: "handle",
+            name: "id",
             in: "path",
             required: true,
-            schema: { type: "string" },
-            description: "Company handle (with or without !! prefix).",
+            schema: { type: "string", format: "uuid" },
+            description: "Company ID.",
           },
         ],
         responses: {

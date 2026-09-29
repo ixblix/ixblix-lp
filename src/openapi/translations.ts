@@ -342,12 +342,12 @@ const translations: Record<SupportedLanguage, TranslationStrings> = {
       "/companies/configuration": {
         summary: "Atualizar configuração da empresa",
         description:
-          "Atualiza as configurações de identidade da empresa após o registro e pagamento. Permite alterar o nome da empresa, URL pública do site e identificador único (handle). O handle é normalizado para minúsculas e pode ser referenciado com o prefixo !! em links públicos.",
+          "Atualiza as configurações de identidade da empresa após o registro e pagamento. Permite alterar o nome da empresa e URL pública do site.",
       },
-      "/companies/public/{handle}": {
+      "/companies/public/{id}": {
         summary: "Obter perfil público da empresa",
         description:
-          "Retorna uma visão pública e não autenticada de uma empresa ativa pelo seu handle. O handle pode ser fornecido com ou sem o prefixo !! inicial. Inclui a personalização visual da empresa para renderização em uma página pública.",
+          "Retorna uma visão pública e não autenticada de uma empresa ativa pelo seu ID. Inclui a personalização visual da empresa para renderização em uma página pública.",
       },
       "/companies/webhook": {
         summary: "Atualizar endpoint de webhook da empresa",
@@ -847,12 +847,12 @@ const translations: Record<SupportedLanguage, TranslationStrings> = {
       "/companies/configuration": {
         summary: "Actualizar configuración de la empresa",
         description:
-          "Actualiza la configuración de identidad de la empresa tras el registro y pago. Permite cambiar el nombre de la empresa, la URL pública del sitio web y el identificador único (handle). El handle se normaliza a minúsculas y puede referenciarse con el prefijo !! en enlaces públicos.",
+          "Actualiza la configuración de identidad de la empresa tras el registro y pago. Permite cambiar el nombre de la empresa y la URL pública del sitio web.",
       },
-      "/companies/public/{handle}": {
+      "/companies/public/{id}": {
         summary: "Obtener perfil público de la empresa",
         description:
-          "Devuelve una vista pública y no autenticada de una empresa activa por su handle. El handle puede proporcionarse con o sin el prefijo !! inicial. Incluye la personalización visual de la empresa para renderizar en una página pública.",
+          "Devuelve una vista pública y no autenticada de una empresa activa por su ID. Incluye la personalización visual de la empresa para renderizar en una página pública.",
       },
       "/companies/webhook": {
         summary: "Actualizar endpoint de webhook de la empresa",

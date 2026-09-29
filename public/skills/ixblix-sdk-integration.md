@@ -109,7 +109,6 @@ console.log("Available plans:", plans);
 const { company, payment } = await integratorClient.registerCompany({
   name: "Acme Corporation",
   planId: plans[0].id,
-  handle: "acme",
 });
 
 // Redirect the company owner to payment.checkoutUrl to complete payment
@@ -686,7 +685,7 @@ await integratorClient.registerIntegrator({
 ### Company Onboarding (integrator auth)
 
 ```typescript
-await integratorClient.registerCompany({ name, handle, planId });
+await integratorClient.registerCompany({ name, planId });
 await integratorClient.activateCompany(companyId, transactionId);
 const plans = await integratorClient.listPlans();
 const providers = await integratorClient.listPaymentProviders();

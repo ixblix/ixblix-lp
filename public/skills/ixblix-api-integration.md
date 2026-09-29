@@ -94,7 +94,6 @@ curl -X POST https://api.ixblix.app/api/companies/register \
   -H "Content-Type: application/json" \
   -d '{
     "name": "Acme Corporation",
-    "handle": "acme",
     "planId": "uuid-of-plan"
   }'
 ```
@@ -106,7 +105,6 @@ Response includes `company` and `payment` with a `checkoutUrl` — redirect the 
   "company": {
     "id": "cmp_xxxx",
     "name": "Acme Corporation",
-    "handle": "acme",
     "status": "PENDING_PAYMENT"
   },
   "payment": {
