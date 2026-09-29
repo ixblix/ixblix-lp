@@ -70,7 +70,6 @@ const locale: Locale = 'es';
   <CodeBlock language="json" code={`// Request
 {
   "name": "Acme Support",
-  "handle": "acme",
   "planId": "plan_starter",
   "email": "billing@acme.example",
   "taxId": "12345678000199",
@@ -79,7 +78,7 @@ const locale: Locale = 'es';
 
 // Response 200
 {
-  "company": { "id": "...", "name": "...", "handle": "acme", "status": "PENDING_PAYMENT" },
+  "company": { "id": "...", "name": "...", "status": "PENDING_PAYMENT" },
   "payment": {
     "transactionId": "txn_xxx",
     "provider": "asaas",
@@ -110,7 +109,6 @@ const locale: Locale = 'es';
 {
   "id": "...",
   "name": "Acme Support",
-  "handle": "acme",
   "status": "ACTIVE",
   "websiteUrl": "https://acme.example",
   "customizations": {
@@ -146,8 +144,8 @@ const locale: Locale = 'es';
   <Endpoint method="PUT" path="/companies/configuration" auth="X-API-Key" authType="api-key" />
   <p>Update company configuration (name, website URL, etc.).</p>
 
-  <Endpoint method="GET" path="/companies/public/{handle}" auth="Public" authType="public" />
-  <p>Fetch a company's public profile by handle (used by the customer web app).</p>
+  <Endpoint method="GET" path="/companies/public/{id}" auth="Public" authType="public" />
+  <p>Fetch a company's public profile by ID (used by the customer web app).</p>
 
   <h2 id="encryption">Encryption keys</h2>
 

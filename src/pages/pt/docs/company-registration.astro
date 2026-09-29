@@ -37,8 +37,7 @@ const locale: Locale = 'pt';
   -H "Content-Type: application/json" \\
   -d '{
     "name": "Acme Corporation",
-    "planId": "plan_starter",
-    "handle": "acme"
+    "planId": "plan_starter"
   }'`} title="cURL" />
 
   <h3>Campos da Requisição</h3>
@@ -47,13 +46,12 @@ const locale: Locale = 'pt';
     <tbody>
       <tr><td><code>name</code></td><td>Sim</td><td>Nome de exibição da empresa.</td></tr>
       <tr><td><code>planId</code></td><td>Sim</td><td>ID de um plano de assinatura.</td></tr>
-      <tr><td><code>handle</code></td><td>Sim</td><td>Identificador público único.</td></tr>
     </tbody>
   </table>
 
   <p>A resposta inclui <code>company</code> e <code>payment</code> com um <code>checkoutUrl</code> — redirecione o dono da empresa para lá para concluir o pagamento.</p>
   <CodeBlock language="json" code={`{
-  "company": { "id": "cmp_xxxx", "name": "Acme Corporation", "handle": "acme", "status": "PENDING_PAYMENT" },
+  "company": { "id": "cmp_xxxx", "name": "Acme Corporation", "status": "PENDING_PAYMENT" },
   "payment": {
     "transactionId": "company_cmp_xxxx-txn",
     "provider": "efi",

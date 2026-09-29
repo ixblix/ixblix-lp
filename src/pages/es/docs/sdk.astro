@@ -75,7 +75,6 @@ const client = new IxblixClient({
   <Endpoint method="POST" path="/companies/register" auth="HTTP Basic" authType="integrator" />
   <CodeBlock language="typescript" code={`client.registerCompany({
   name: string,
-  handle: string,
   planId?: string,
   confirmationWebhookUrl?: string,
   email?: string,
@@ -98,7 +97,7 @@ const client = new IxblixClient({
   <Endpoint method="GET" path="/companies/profile" auth="X-API-Key" authType="api-key" />
   <CodeBlock language="typescript" code={`client.getProfile(): Promise<CompanyProfile>
 
-// { id, name, handle, status, websiteUrl, customizations }`} title="getProfile" />
+// { id, name, status, websiteUrl, customizations }`} title="getProfile" />
 
   <Endpoint method="GET" path="/companies/balance" auth="X-API-Key" authType="api-key" />
   <CodeBlock language="typescript" code={`client.getBalance(): Promise<CompanyBalance>

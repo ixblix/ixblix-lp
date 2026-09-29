@@ -24,7 +24,7 @@ const locale: Locale = 'es';
   "error": "Validación falló",
   "code": "VALIDATION_ERROR",
   "errors": [
-    { "path": "/body/handle", "message": "debe ser string" }
+    { "path": "/body/name", "message": "debe ser string" }
   ]
 }`} title="Error de validación" />
 
@@ -38,7 +38,6 @@ const locale: Locale = 'es';
       <tr><td><code>402</code></td><td><code>PAYMENT_FAILED</code></td><td>Pago de activación de empresa falló.</td></tr>
       <tr><td><code>403</code></td><td><code>FORBIDDEN</code></td><td>La empresa no está activa.</td></tr>
       <tr><td><code>404</code></td><td><code>NOT_FOUND</code></td><td>El recurso no existe.</td></tr>
-      <tr><td><code>409</code></td><td><code>HANDLE_IN_USE</code></td><td>Handle de empresa ya registrado.</td></tr>
       <tr><td><code>409</code></td><td><code>ALREADY_PROCESSED</code></td><td>Activación ya procesada.</td></tr>
       <tr><td><code>409</code></td><td><code>CONVERSATION_CLOSED</code></td><td>La conversación ya no está activa.</td></tr>
       <tr><td><code>500</code></td><td><code>INTERNAL_ERROR</code></td><td>Error inesperado del servidor.</td></tr>

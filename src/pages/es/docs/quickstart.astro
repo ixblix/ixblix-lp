@@ -93,7 +93,6 @@ export const company = new IxblixClient({
   </p>
   <CodeBlock language="typescript" code={`const { company: created, payment } = await integrator.registerCompany({
   name: 'Acme Support',
-  handle: 'acme',
   planId: 'plan_starter',
   email: 'billing@acme.example',
   confirmationWebhookUrl: 'https://mycrm.example.com/ixblix/company-activated',
@@ -379,7 +378,6 @@ async function main() {
   // 2. Register + activate a company
   const { company: created, payment } = await integrator.registerCompany({
     name: 'Acme Support',
-    handle: 'acme',
     planId: 'plan_starter',
   });
   const { apiKey } = await integrator.activateCompany(created.id, payment.transactionId);

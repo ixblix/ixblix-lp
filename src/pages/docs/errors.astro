@@ -24,7 +24,7 @@ const locale: Locale = 'en';
   "error": "Validation failed",
   "code": "VALIDATION_ERROR",
   "errors": [
-    { "path": "/body/handle", "message": "must be string" }
+    { "path": "/body/name", "message": "must be string" }
   ]
 }`} title="Validation error" />
 
@@ -38,7 +38,6 @@ const locale: Locale = 'en';
       <tr><td><code>402</code></td><td><code>PAYMENT_FAILED</code></td><td>Company activation payment failed.</td></tr>
       <tr><td><code>403</code></td><td><code>FORBIDDEN</code></td><td>Company is not active.</td></tr>
       <tr><td><code>404</code></td><td><code>NOT_FOUND</code></td><td>Resource does not exist.</td></tr>
-      <tr><td><code>409</code></td><td><code>HANDLE_IN_USE</code></td><td>Company handle already registered.</td></tr>
       <tr><td><code>409</code></td><td><code>ALREADY_PROCESSED</code></td><td>Activation already processed.</td></tr>
       <tr><td><code>409</code></td><td><code>CONVERSATION_CLOSED</code></td><td>Conversation is no longer active.</td></tr>
       <tr><td><code>500</code></td><td><code>INTERNAL_ERROR</code></td><td>Unexpected server error.</td></tr>
