@@ -1473,7 +1473,7 @@ export const openApiSpec: OpenAPIV3.Document = {
             type: "object",
             nullable: true,
             description:
-              "Identity of the operator that last replied to the customer. Falls back to the conversation's current operator when no company message has been sent yet. Used by the conversation list to show the agent that last interacted with the customer.",
+              "Identity of the operator that last replied to the customer. Persisted on the conversation and updated whenever a company message is sent. Used by the conversation list to show the agent that last interacted with the customer.",
             properties: {
               uuid: { type: "string", nullable: true },
               name: { type: "string", nullable: true },
